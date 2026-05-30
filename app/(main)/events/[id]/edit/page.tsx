@@ -1,11 +1,11 @@
 import { EventForm } from "@/app/(main)/events/new/EventForm";
-import { requireUser } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Event } from "@/lib/types";
 import { notFound, redirect } from "next/navigation";
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireUser();
+  const profile = await requireProfile();
   const { id } = await params;
   const supabase = await createClient();
 
@@ -13,7 +13,8 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   if (!data) notFound();
 
   const event = data as Event;
-  if (event.organizer_id !== user.id) redirect(`/events/${event.id}`);
+  const canEdit = profile.role === "admin" || event.organizer_id === profile.id;
+  if (!canEdit) redirect(`/events/${event.id}`);
 
   return (
     <main className="min-h-screen bg-[#f8ecfb]">

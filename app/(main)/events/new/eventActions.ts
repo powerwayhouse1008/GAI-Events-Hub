@@ -40,10 +40,7 @@ async function ensureOrganizerProfile(profile: Profile) {
       .maybeSingle();
 
     if (existingByEmail && existingByEmail.id !== profile.id) {
-      await supabase
-        .from("profiles")
-        .update({ email: null })
-        .eq("id", existingByEmail.id);
+      await supabase.from("profiles").update({ email: null }).eq("id", existingByEmail.id);
     }
   }
 
@@ -65,29 +62,34 @@ export async function saveEvent(input: SaveEventInput) {
   const supabase = createAdminClient();
 
   const profileError = await ensureOrganizerProfile(profile);
-
   if (profileError) {
-    return {
-      error: `主催者プロフィールを作成できませんでした。${profileError.message}`
-    };
+    return { error: `主催者プロフィールを作成できませんでした。${profileError.message}` };
   }
 
-  if (input.eventId && profile.role !== "admin") {
+  let organizerId = profile.id;
+
+  if (input.eventId) {
     const { data: existingEvent, error: fetchError } = await supabase
       .from("events")
       .select("organizer_id")
       .eq("id", input.eventId)
       .single();
 
-    if (fetchError || !existingEvent || existingEvent.organizer_id !== profile.id) {
+    if (fetchError || !existingEvent) {
+      return { error: "イベントが見つかりません。" };
+    }
+
+    if (profile.role !== "admin" && existingEvent.organizer_id !== profile.id) {
       return { error: "このイベントを編集する権限がありません。" };
     }
+
+    organizerId = existingEvent.organizer_id;
   }
 
   const payload = {
     title: input.title,
     description: input.description,
-    organizer_id: profile.id,
+    organizer_id: organizerId,
     organizer_name: input.organizerName,
     category: input.category,
     region: input.region,
@@ -104,12 +106,7 @@ export async function saveEvent(input: SaveEventInput) {
   };
 
   const { data, error } = input.eventId
-    ? await supabase
-        .from("events")
-        .update(payload)
-        .eq("id", input.eventId)
-        .select("id")
-        .single()
+    ? await supabase.from("events").update(payload).eq("id", input.eventId).select("id").single()
     : await supabase.from("events").insert(payload).select("id").single();
 
   if (error) {

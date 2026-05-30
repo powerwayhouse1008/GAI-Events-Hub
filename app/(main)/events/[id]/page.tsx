@@ -14,7 +14,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const event = data as Event;
   const profile = await getProfile();
-  const isOrganizer = profile?.id === event.organizer_id;
+  const isOrganizer = profile?.role === "admin" || profile?.id === event.organizer_id;
 
   // Fetch organizer-specific data if user is the organizer
   let announcements: any[] = [];
