@@ -133,6 +133,18 @@ set role = 'admin', organizer_status = 'approved'
 where email = 'YOUR_EMAIL@gmail.com';
 ```
 
+Or create/reset the default admin user from your terminal:
+
+```bash
+set NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+set SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+set ADMIN_EMAIL=mai@powerway.jp
+set ADMIN_PASSWORD=Dao123123
+npm run setup:admin
+```
+
+On PowerShell, use `$env:NAME="value"` instead of `set NAME=value`.
+
 ## Deploy to Vercel
 
 1. Push this folder to GitHub.

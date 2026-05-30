@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "setup:admin": "node scripts/setup-admin.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
