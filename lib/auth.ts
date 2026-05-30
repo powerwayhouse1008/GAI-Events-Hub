@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
 
 export async function getCurrentUser() {
@@ -14,6 +15,8 @@ export async function getProfile(): Promise<Profile | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const configuredAdminEmail = (process.env.ADMIN_EMAIL || "mai@powerway.jp").toLowerCase();
+  const isConfiguredAdmin = user.email?.toLowerCase() === configuredAdminEmail;
   const fallbackProfile: Profile = {
     id: user.id,
     email: user.email || null,
@@ -24,10 +27,41 @@ export async function getProfile(): Promise<Profile | null> {
       "User",
     avatar_url: user.user_metadata?.avatar_url || null,
     company_name: user.user_metadata?.company_name || null,
-    role: "member",
-    organizer_status: user.user_metadata?.requested_role === "organizer" ? "pending" : "none",
+    role: isConfiguredAdmin ? "admin" : "member",
+    organizer_status: isConfiguredAdmin
+      ? "approved"
+      : user.user_metadata?.requested_role === "organizer"
+        ? "pending"
+        : "none",
     created_at: user.created_at
   };
+
+  if (isConfiguredAdmin) {
+    try {
+      const admin = createAdminClient();
+      const { data: adminProfile } = await admin
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          email: user.email,
+          display_name:
+            user.user_metadata?.display_name ||
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "Admin",
+          avatar_url: user.user_metadata?.avatar_url || null,
+          company_name: user.user_metadata?.company_name || null,
+          role: "admin",
+          organizer_status: "approved"
+        })
+        .select("*")
+        .single();
+
+      if (adminProfile) return adminProfile as Profile;
+    } catch {
+      return fallbackProfile;
+    }
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase

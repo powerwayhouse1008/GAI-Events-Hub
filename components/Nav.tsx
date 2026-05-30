@@ -38,9 +38,14 @@ export async function Nav() {
             </Link>
           )}
           {profile?.role === "admin" && (
-            <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
-              <ShieldCheck size={18} /> Admin
-            </Link>
+            <>
+              <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
+                <ShieldCheck size={18} /> Admin
+              </Link>
+              <Link href="/admin/organizers" className="flex items-center gap-2 hover:text-purple-700">
+                承認
+              </Link>
+            </>
           )}
         </nav>
 
