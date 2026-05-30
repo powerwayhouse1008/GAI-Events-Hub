@@ -79,6 +79,9 @@ alter table public.profiles
   add column if not exists organizer_status text not null default 'none',
   add column if not exists created_at timestamptz not null default now();
 
+alter table public.profiles
+  drop constraint if exists profiles_email_key;
+
 alter table public.events
   add column if not exists organizer_name text,
   add column if not exists category text,

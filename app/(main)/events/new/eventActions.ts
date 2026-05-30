@@ -2,6 +2,7 @@
 
 import { requireOrganizer } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Profile } from "@/lib/types";
 
 type SaveEventInput = {
   eventId?: string;
@@ -21,22 +22,54 @@ type SaveEventInput = {
   featured: boolean;
 };
 
-export async function saveEvent(input: SaveEventInput) {
-  const profile = await requireOrganizer();
+async function ensureOrganizerProfile(profile: Profile) {
   const supabase = createAdminClient();
+  const email = profile.email || null;
 
-  const { error: profileError } = await supabase.from("profiles").upsert({
+  const { data: existingById } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", profile.id)
+    .maybeSingle();
+
+  if (!existingById && email) {
+    const { data: existingByEmail } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingByEmail && existingByEmail.id !== profile.id) {
+      await supabase
+        .from("profiles")
+        .update({ email: null })
+        .eq("id", existingByEmail.id);
+    }
+  }
+
+  const { error } = await supabase.from("profiles").upsert({
     id: profile.id,
-    email: profile.email,
-    display_name: profile.display_name || profile.email?.split("@")[0] || "Organizer",
+    email,
+    display_name: profile.display_name || email?.split("@")[0] || "Organizer",
     avatar_url: profile.avatar_url,
     company_name: profile.company_name,
     role: profile.role,
     organizer_status: profile.role === "admin" ? "approved" : profile.organizer_status
   });
 
+  return error;
+}
+
+export async function saveEvent(input: SaveEventInput) {
+  const profile = await requireOrganizer();
+  const supabase = createAdminClient();
+
+  const profileError = await ensureOrganizerProfile(profile);
+
   if (profileError) {
-    return { error: `主催者プロフィールを作成できませんでした。${profileError.message}` };
+    return {
+      error: `主催者プロフィールを作成できませんでした。${profileError.message}`
+    };
   }
 
   if (input.eventId && profile.role !== "admin") {
