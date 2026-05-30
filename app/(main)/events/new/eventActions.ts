@@ -25,6 +25,20 @@ export async function saveEvent(input: SaveEventInput) {
   const profile = await requireOrganizer();
   const supabase = createAdminClient();
 
+  const { error: profileError } = await supabase.from("profiles").upsert({
+    id: profile.id,
+    email: profile.email,
+    display_name: profile.display_name || profile.email?.split("@")[0] || "Organizer",
+    avatar_url: profile.avatar_url,
+    company_name: profile.company_name,
+    role: profile.role,
+    organizer_status: profile.role === "admin" ? "approved" : profile.organizer_status
+  });
+
+  if (profileError) {
+    return { error: `主催者プロフィールを作成できませんでした。${profileError.message}` };
+  }
+
   if (input.eventId && profile.role !== "admin") {
     const { data: existingEvent, error: fetchError } = await supabase
       .from("events")
