@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Event } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { saveEvent } from "./eventActions";
 
 type EventFormProps = {
   event?: Event;
@@ -90,41 +91,32 @@ export function EventForm({ event }: EventFormProps) {
     const endsAt = `${endDate}T${endTime}:00+09:00`;
 
     const payload = {
+      eventId: event?.id,
       title: String(formData.get("title") || ""),
       description: String(formData.get("description") || ""),
-      organizer_id: user.id,
-      organizer_name: String(formData.get("organizer_name") || ""),
+      organizerName: String(formData.get("organizer_name") || ""),
       category: String(formData.get("category") || "AI"),
       region: String(formData.get("region") || "Online"),
       location: String(formData.get("location") || ""),
-      online_url: String(formData.get("online_url") || ""),
-      cover_url: coverUrl,
-      starts_at: startsAt,
-      ends_at: endsAt,
+      onlineUrl: String(formData.get("online_url") || ""),
+      coverUrl,
+      startsAt,
+      endsAt,
       capacity: Number(formData.get("capacity") || 0) || null,
-      ticket_price: Number(formData.get("ticket_price") || 0),
-      approval_mode: String(formData.get("approval_mode") || "manual"),
-      status: "pending",
+      ticketPrice: Number(formData.get("ticket_price") || 0),
+      approvalMode: String(formData.get("approval_mode") || "manual"),
       featured: event?.featured || false
     };
 
-    const { data, error } = isEditing
-      ? await supabase
-          .from("events")
-          .update(payload)
-          .eq("id", event?.id)
-          .eq("organizer_id", user.id)
-          .select("id")
-          .single()
-      : await supabase.from("events").insert(payload).select("id").single();
+    const result = await saveEvent(payload);
 
-    if (error) {
-      alert(error.message);
+    if (result.error) {
+      alert(result.error);
       setLoading(false);
       return;
     }
 
-    router.push(`/events/${data.id}`);
+    router.push(`/events/${result.id}`);
     router.refresh();
   }
 
