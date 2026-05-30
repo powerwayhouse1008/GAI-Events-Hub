@@ -1,6 +1,5 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, requireUser } from "@/lib/auth";
 import type { Announcement, EventDocument } from "@/lib/types";
@@ -43,14 +42,14 @@ export async function createAnnouncement(eventId: string, title: string, content
 }
 
 export async function getAnnouncements(eventId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`通知を取得できませんでした。${error.message}`);
+  if (error) return [];
   return data as Announcement[];
 }
 
@@ -111,14 +110,14 @@ export async function uploadDocument(eventId: string, file: File, title: string)
 }
 
 export async function getEventDocuments(eventId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("event_documents")
     .select("*")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`ファイル一覧を取得できませんでした。${error.message}`);
+  if (error) return [];
   return data as EventDocument[];
 }
 
@@ -155,26 +154,30 @@ export async function getEventParticipants(eventId: string) {
     throw new Error("このイベントを管理する権限がありません。");
   }
 
-  const { data, error } = await supabase
+  const { data: registrations, error } = await supabase
     .from("registrations")
-    .select(
-      `
-      id,
-      user_id,
-      status,
-      message,
-      created_at,
-      profiles:user_id (
-        display_name,
-        email,
-        avatar_url,
-        company_name
-      )
-    `
-    )
+    .select("id, user_id, status, message, created_at")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(`参加者情報を取得できませんでした。${error.message}`);
-  return data;
+
+  const userIds = [...new Set((registrations || []).map((registration) => registration.user_id))];
+  const { data: profiles = [] } = userIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name, email, avatar_url, company_name")
+        .in("id", userIds)
+    : { data: [] };
+
+  const profileById = new Map((profiles || []).map((profile) => [profile.id, profile]));
+  return (registrations || []).map((registration) => ({
+    ...registration,
+    profiles: profileById.get(registration.user_id) || {
+      display_name: null,
+      email: null,
+      avatar_url: null,
+      company_name: null
+    }
+  }));
 }

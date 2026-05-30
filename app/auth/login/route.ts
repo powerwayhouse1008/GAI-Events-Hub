@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { setAppSessionCookie } from "@/lib/app-session";
 
 function getSafeRedirect(path: string | null) {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return "/events";
@@ -95,5 +96,7 @@ export async function POST(request: NextRequest) {
 
   const finishUrl = new URL("/auth/finish", requestUrl.origin);
   finishUrl.searchParams.set("next", redirectTo);
-  return redirectWithCookies(finishUrl, cookiesToSet);
+  const response = redirectWithCookies(finishUrl, cookiesToSet);
+  if (user) setAppSessionCookie(response, user.id);
+  return response;
 }

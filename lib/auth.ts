@@ -2,13 +2,27 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
+import { getAppSessionUserId } from "@/lib/app-session";
 
 export async function getCurrentUser() {
   const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  return user;
+  if (user) return user;
+
+  const appSessionUserId = await getAppSessionUserId();
+  if (!appSessionUserId) return null;
+
+  try {
+    const admin = createAdminClient();
+    const {
+      data: { user: appUser }
+    } = await admin.auth.admin.getUserById(appSessionUserId);
+    return appUser;
+  } catch {
+    return null;
+  }
 }
 
 function profileFromUser(user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>): Profile {

@@ -1,19 +1,38 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrganizer } from "@/lib/auth";
 
-export async function approveRegistration(formData: FormData) {
-  await requireOrganizer();
-  const supabase = await createClient();
-  await supabase.from("registrations").update({ status: "approved" }).eq("id", String(formData.get("id")));
+async function updateRegistrationStatus(formData: FormData, status: "approved" | "rejected") {
+  const profile = await requireOrganizer();
+  const supabase = createAdminClient();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const { data: registration } = await supabase
+    .from("registrations")
+    .select("id, event_id, events(organizer_id)")
+    .eq("id", id)
+    .single();
+
+  const event = Array.isArray(registration?.events)
+    ? registration?.events[0]
+    : registration?.events;
+
+  if (profile.role !== "admin" && event?.organizer_id !== profile.id) {
+    return;
+  }
+
+  await supabase.from("registrations").update({ status }).eq("id", id);
+  if (registration?.event_id) revalidatePath(`/events/${registration.event_id}`);
   revalidatePath("/organizer-dashboard");
 }
 
+export async function approveRegistration(formData: FormData) {
+  await updateRegistrationStatus(formData, "approved");
+}
+
 export async function rejectRegistration(formData: FormData) {
-  await requireOrganizer();
-  const supabase = await createClient();
-  await supabase.from("registrations").update({ status: "rejected" }).eq("id", String(formData.get("id")));
-  revalidatePath("/organizer-dashboard");
+  await updateRegistrationStatus(formData, "rejected");
 }

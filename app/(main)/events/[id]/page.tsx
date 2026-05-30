@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireUser, getProfile } from "@/lib/auth";
+import { getProfile } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { registerEvent } from "./registerEvent";
 import { getAnnouncements, getEventDocuments, getEventParticipants } from "./eventManagerActions";
@@ -16,21 +16,20 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const profile = await getProfile();
   const isOrganizer = profile?.role === "admin" || profile?.id === event.organizer_id;
 
-  // Fetch organizer-specific data if user is the organizer
   let announcements: any[] = [];
   let documents: any[] = [];
   let participants: any[] = [];
 
-  if (isOrganizer) {
-    try {
-      [announcements, documents, participants] = await Promise.all([
-        getAnnouncements(id),
-        getEventDocuments(id),
-        getEventParticipants(id),
-      ]);
-    } catch (error) {
-      console.error("Error fetching event data:", error);
+  try {
+    [announcements, documents] = await Promise.all([
+      profile ? getAnnouncements(id) : Promise.resolve([]),
+      profile ? getEventDocuments(id) : Promise.resolve([])
+    ]);
+    if (isOrganizer) {
+      participants = await getEventParticipants(id);
     }
+  } catch (error) {
+    console.error("Error fetching event data:", error);
   }
 
   return (
