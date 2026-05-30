@@ -11,13 +11,12 @@ export async function getCurrentUser() {
   return user;
 }
 
-export async function getProfile(): Promise<Profile | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-
+function profileFromUser(user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>): Profile {
   const configuredAdminEmail = (process.env.ADMIN_EMAIL || "mai@powerway.jp").toLowerCase();
   const isConfiguredAdmin = user.email?.toLowerCase() === configuredAdminEmail;
-  const fallbackProfile: Profile = {
+  const isOrganizer = user.user_metadata?.requested_role === "organizer";
+
+  return {
     id: user.id,
     email: user.email || null,
     display_name:
@@ -27,42 +26,39 @@ export async function getProfile(): Promise<Profile | null> {
       "User",
     avatar_url: user.user_metadata?.avatar_url || null,
     company_name: user.user_metadata?.company_name || null,
-    role: isConfiguredAdmin ? "admin" : "member",
-    organizer_status: isConfiguredAdmin
-      ? "approved"
-      : user.user_metadata?.requested_role === "organizer"
-        ? "pending"
-        : "none",
+    role: isConfiguredAdmin ? "admin" : isOrganizer ? "organizer" : "member",
+    organizer_status: isConfiguredAdmin || isOrganizer ? "approved" : "none",
     created_at: user.created_at
   };
+}
 
-  if (isConfiguredAdmin) {
-    try {
-      const admin = createAdminClient();
-      const { data: adminProfile } = await admin
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          email: user.email,
-          display_name:
-            user.user_metadata?.display_name ||
-            user.user_metadata?.full_name ||
-            user.email?.split("@")[0] ||
-            "Admin",
-          avatar_url: user.user_metadata?.avatar_url || null,
-          company_name: user.user_metadata?.company_name || null,
-          role: "admin",
-          organizer_status: "approved"
-        })
-        .select("*")
-        .single();
+async function upsertProfileWithServiceRole(profile: Profile) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("profiles")
+    .upsert(
+      {
+        id: profile.id,
+        email: profile.email,
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url,
+        company_name: profile.company_name,
+        role: profile.role,
+        organizer_status: profile.organizer_status
+      },
+      { onConflict: "id" }
+    )
+    .select("*")
+    .single();
 
-      if (adminProfile) return adminProfile as Profile;
-    } catch {
-      return fallbackProfile;
-    }
-  }
+  return data as Profile | null;
+}
 
+export async function getProfile(): Promise<Profile | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const fallbackProfile = profileFromUser(user);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
@@ -70,54 +66,44 @@ export async function getProfile(): Promise<Profile | null> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (data) {
-    if (
-      user.user_metadata?.requested_role === "organizer" &&
-      data.role === "member" &&
-      (data.organizer_status === "none" || data.organizer_status === "rejected")
-    ) {
-      try {
-        const admin = createAdminClient();
-        const { data: updatedProfile } = await admin
-          .from("profiles")
-          .update({ organizer_status: "pending" })
-          .eq("id", user.id)
-          .select("*")
-          .single();
+  const shouldBeAdmin = fallbackProfile.role === "admin";
+  const shouldBeOrganizer = fallbackProfile.role === "organizer";
 
-        if (updatedProfile) return updatedProfile as Profile;
+  if (data) {
+    const profile = data as Profile;
+    const needsUpgrade =
+      (shouldBeAdmin && (profile.role !== "admin" || profile.organizer_status !== "approved")) ||
+      (shouldBeOrganizer &&
+        (profile.role !== "organizer" || profile.organizer_status !== "approved"));
+
+    if (needsUpgrade) {
+      try {
+        const upgraded = await upsertProfileWithServiceRole({
+          ...profile,
+          role: fallbackProfile.role,
+          organizer_status: fallbackProfile.organizer_status
+        });
+        if (upgraded) return upgraded;
       } catch {
-        return { ...(data as Profile), organizer_status: "pending" };
+        return {
+          ...profile,
+          role: fallbackProfile.role,
+          organizer_status: fallbackProfile.organizer_status
+        };
       }
     }
 
-    return data as Profile;
+    return profile;
   }
 
-  if (error) {
+  if (error) return fallbackProfile;
+
+  try {
+    const createdProfile = await upsertProfileWithServiceRole(fallbackProfile);
+    return createdProfile || fallbackProfile;
+  } catch {
     return fallbackProfile;
   }
-
-  const requestedRole = user.user_metadata?.requested_role;
-  const { data: createdProfile } = await supabase
-    .from("profiles")
-    .insert({
-      id: user.id,
-      email: user.email,
-      display_name:
-        user.user_metadata?.display_name ||
-        user.user_metadata?.full_name ||
-        user.email?.split("@")[0] ||
-        "User",
-      avatar_url: user.user_metadata?.avatar_url || null,
-      company_name: user.user_metadata?.company_name || null,
-      role: "member",
-      organizer_status: requestedRole === "organizer" ? "pending" : "none"
-    })
-    .select("*")
-    .single();
-
-  return (createdProfile as Profile | null) || fallbackProfile;
 }
 
 export async function requireUser() {
@@ -142,10 +128,7 @@ export async function requireAdmin() {
 export async function requireOrganizer() {
   const profile = await requireProfile();
   if (profile.role !== "admin" && profile.role !== "organizer") {
-    redirect("/organizer-pending");
-  }
-  if (profile.role === "organizer" && profile.organizer_status !== "approved") {
-    redirect("/organizer-pending");
+    redirect("/events");
   }
   return profile;
 }

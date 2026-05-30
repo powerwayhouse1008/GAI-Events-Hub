@@ -10,7 +10,6 @@ const DEFAULT_ADMIN_PASSWORD = "Dao123123";
 function refreshAdminPages() {
   revalidatePath("/admin");
   revalidatePath("/admin/accounts");
-  revalidatePath("/admin/organizers");
 }
 
 async function findAuthUserByEmail(email: string) {
@@ -85,8 +84,8 @@ async function ensureProfile(id: string) {
           typeof user.user_metadata?.company_name === "string"
             ? user.user_metadata.company_name
             : null,
-        role: "member",
-        organizer_status: user.user_metadata?.requested_role === "organizer" ? "pending" : "none"
+        role: user.user_metadata?.requested_role === "organizer" ? "organizer" : "member",
+        organizer_status: user.user_metadata?.requested_role === "organizer" ? "approved" : "none"
       },
       { onConflict: "id" }
     )
@@ -129,6 +128,23 @@ export async function revokeAdmin(formData: FormData) {
     .from("profiles")
     .update({ role: "member", organizer_status: "none" })
     .eq("id", id);
+
+  refreshAdminPages();
+}
+
+export async function deleteAccount(formData: FormData) {
+  const currentAdmin = await requireAdmin();
+  const supabase = createAdminClient();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  if (id === currentAdmin.id) {
+    refreshAdminPages();
+    return;
+  }
+
+  await supabase.from("profiles").delete().eq("id", id);
+  await supabase.auth.admin.deleteUser(id);
 
   refreshAdminPages();
 }

@@ -38,7 +38,7 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [googleRole, setGoogleRole] = useState("member");
 
-  async function requestOrganizerReview(email: string, displayName: string, companyName: string) {
+  async function activateOrganizer(email: string, displayName: string, companyName: string) {
     await fetch("/auth/request-organizer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,10 +77,10 @@ export function RegisterForm() {
     }
 
     if (requestedRole === "organizer") {
-      await requestOrganizerReview(email, displayName, companyName);
+      await activateOrganizer(email, displayName, companyName);
     }
 
-    window.location.href = requestedRole === "organizer" ? "/organizer-pending" : "/events";
+    window.location.href = "/events";
   }
 
   function signUpWithGoogle() {
@@ -98,7 +98,7 @@ export function RegisterForm() {
           onChange={(event) => setGoogleRole(event.target.value)}
         >
           <option value="member">Member / 参加者</option>
-          <option value="organizer">Organizer / 主催者申請</option>
+          <option value="organizer">Organizer / 主催者</option>
         </select>
       </label>
 
@@ -140,7 +140,7 @@ export function RegisterForm() {
           アカウント種別
           <select className="input mt-2" name="requested_role">
             <option value="member">Member / 参加者</option>
-            <option value="organizer">Organizer / 主催者申請</option>
+            <option value="organizer">Organizer / 主催者</option>
           </select>
         </label>
         <button disabled={loading} className="btn btn-primary w-full" type="submit">

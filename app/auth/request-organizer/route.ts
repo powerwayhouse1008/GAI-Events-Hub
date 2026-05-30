@@ -26,20 +26,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "ユーザーが見つかりません。" }, { status: 404 });
   }
 
-  const { error } = await supabase.from("profiles").upsert({
-    id: user.id,
-    email: user.email,
-    display_name:
-      displayName ||
-      user.user_metadata?.display_name ||
-      user.user_metadata?.full_name ||
-      user.email?.split("@")[0] ||
-      "User",
-    avatar_url: user.user_metadata?.avatar_url || null,
-    company_name: companyName || user.user_metadata?.company_name || null,
-    role: "member",
-    organizer_status: "pending"
-  });
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      email: user.email,
+      display_name:
+        displayName ||
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "User",
+      avatar_url: user.user_metadata?.avatar_url || null,
+      company_name: companyName || user.user_metadata?.company_name || null,
+      role: "organizer",
+      organizer_status: "approved"
+    },
+    { onConflict: "id" }
+  );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

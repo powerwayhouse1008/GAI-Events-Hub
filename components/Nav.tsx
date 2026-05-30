@@ -5,9 +5,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Nav() {
   const profile = await getProfile();
-  const canCreateEvent =
-    profile?.role === "admin" ||
-    (profile?.role === "organizer" && profile.organizer_status === "approved");
+  const canCreateEvent = profile?.role === "admin" || profile?.role === "organizer";
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/50 bg-white/80 backdrop-blur-xl">
@@ -38,14 +36,9 @@ export async function Nav() {
             </Link>
           )}
           {profile?.role === "admin" && (
-            <>
-              <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
-                <ShieldCheck size={18} /> Admin
-              </Link>
-              <Link href="/admin/organizers" className="flex items-center gap-2 hover:text-purple-700">
-                承認
-              </Link>
-            </>
+            <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
+              <ShieldCheck size={18} /> Admin
+            </Link>
           )}
         </nav>
 
@@ -55,7 +48,8 @@ export async function Nav() {
               hour: "2-digit",
               minute: "2-digit",
               timeZone: "Asia/Tokyo"
-            })} GMT+9
+            })}{" "}
+            GMT+9
           </span>
 
           {profile ? (

@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ApprovalStatus, Profile, UserRole } from "@/lib/types";
-import { createDefaultAdmin, grantAdmin, revokeAdmin } from "./accountActions";
+import { createDefaultAdmin, deleteAccount, grantAdmin, revokeAdmin } from "./accountActions";
 
 type AccountRow = {
   id: string;
@@ -35,6 +35,8 @@ function toAccountRows(profiles: Profile[], authUsers: Awaited<ReturnType<typeof
 
   for (const user of authUsers) {
     const profile = profileById.get(user.id);
+    const isOrganizer = user.user_metadata?.requested_role === "organizer";
+
     rows.set(user.id, {
       id: user.id,
       email: profile?.email || user.email || null,
@@ -45,10 +47,8 @@ function toAccountRows(profiles: Profile[], authUsers: Awaited<ReturnType<typeof
       company_name:
         profile?.company_name ||
         (typeof user.user_metadata?.company_name === "string" ? user.user_metadata.company_name : null),
-      role: profile?.role || "member",
-      organizer_status:
-        profile?.organizer_status ||
-        (user.user_metadata?.requested_role === "organizer" ? "pending" : "none")
+      role: profile?.role || (isOrganizer ? "organizer" : "member"),
+      organizer_status: profile?.organizer_status || (isOrganizer ? "approved" : "none")
     });
   }
 
@@ -93,7 +93,7 @@ export default async function AdminAccountsPage() {
         <div>
           <h1 className="text-5xl font-black tracking-tight">アカウント権限</h1>
           <p className="mt-3 text-slate-500">
-            登録済みアカウントに管理者権限を付与または解除できます。
+            登録済みアカウントの管理者権限を変更し、不要なアカウントを削除できます。
           </p>
         </div>
         <form action={createDefaultAdmin}>
@@ -116,41 +116,54 @@ export default async function AdminAccountsPage() {
             </tr>
           </thead>
           <tbody>
-            {accounts.map((account) => (
-              <tr key={account.id} className="border-b">
-                <td className="p-3 font-bold">{account.display_name || "-"}</td>
-                <td className="p-3">{account.email || "-"}</td>
-                <td className="p-3">{account.company_name || "-"}</td>
-                <td className="p-3">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                    {account.role}
-                  </span>
-                </td>
-                <td className="p-3">{account.organizer_status}</td>
-                <td className="p-3">
-                  <div className="flex flex-wrap gap-2">
-                    <form action={grantAdmin}>
-                      <input type="hidden" name="id" value={account.id} />
-                      <button
-                        disabled={account.role === "admin"}
-                        className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        管理者にする
-                      </button>
-                    </form>
-                    <form action={revokeAdmin}>
-                      <input type="hidden" name="id" value={account.id} />
-                      <button
-                        disabled={account.role !== "admin" || account.id === currentAdmin.id}
-                        className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        管理者解除
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {accounts.map((account) => {
+              const isCurrentAdmin = account.id === currentAdmin.id;
+
+              return (
+                <tr key={account.id} className="border-b">
+                  <td className="p-3 font-bold">{account.display_name || "-"}</td>
+                  <td className="p-3">{account.email || "-"}</td>
+                  <td className="p-3">{account.company_name || "-"}</td>
+                  <td className="p-3">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
+                      {account.role}
+                    </span>
+                  </td>
+                  <td className="p-3">{account.organizer_status}</td>
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-2">
+                      <form action={grantAdmin}>
+                        <input type="hidden" name="id" value={account.id} />
+                        <button
+                          disabled={account.role === "admin"}
+                          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          管理者にする
+                        </button>
+                      </form>
+                      <form action={revokeAdmin}>
+                        <input type="hidden" name="id" value={account.id} />
+                        <button
+                          disabled={account.role !== "admin" || isCurrentAdmin}
+                          className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          管理者解除
+                        </button>
+                      </form>
+                      <form action={deleteAccount}>
+                        <input type="hidden" name="id" value={account.id} />
+                        <button
+                          disabled={isCurrentAdmin}
+                          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          アカウント削除
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
             {!accounts.length && (
               <tr>
                 <td colSpan={6} className="p-3 text-slate-500">

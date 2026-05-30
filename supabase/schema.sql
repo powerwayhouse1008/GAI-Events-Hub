@@ -159,16 +159,20 @@ begin
     ),
     new.raw_user_meta_data->>'avatar_url',
     new.raw_user_meta_data->>'company_name',
-    'member',
-    case when requested_role = 'organizer' then 'pending' else 'none' end
+    case when requested_role = 'organizer' then 'organizer' else 'member' end,
+    case when requested_role = 'organizer' then 'approved' else 'none' end
   )
   on conflict (id) do update set
     email = excluded.email,
     display_name = coalesce(public.profiles.display_name, excluded.display_name),
     avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
     company_name = coalesce(public.profiles.company_name, excluded.company_name),
+    role = case
+      when requested_role = 'organizer' and public.profiles.role = 'member' then 'organizer'
+      else public.profiles.role
+    end,
     organizer_status = case
-      when public.profiles.organizer_status = 'none' and requested_role = 'organizer' then 'pending'
+      when requested_role = 'organizer' then 'approved'
       else public.profiles.organizer_status
     end;
 

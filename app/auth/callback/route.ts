@@ -53,14 +53,14 @@ export async function GET(request: Request) {
             "User",
           avatar_url: user.user_metadata?.avatar_url || null,
           company_name: user.user_metadata?.company_name || null,
-          organizer_status: "pending",
-          role: "member"
+          organizer_status: "approved",
+          role: "organizer"
         },
         { onConflict: "id" }
       );
     }
 
-    return NextResponse.redirect(new URL("/organizer-pending", requestUrl.origin));
+    return NextResponse.redirect(new URL("/events", requestUrl.origin));
   }
 
   return NextResponse.redirect(new URL(next, requestUrl.origin));
