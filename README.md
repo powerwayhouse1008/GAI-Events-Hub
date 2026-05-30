@@ -47,11 +47,13 @@ npm install
 
 ### 2. Create Supabase project
 
-Create a Supabase project, then open SQL Editor and run:
+Create a Supabase project, then open SQL Editor and run the full idempotent setup script:
 
 ```txt
 supabase/schema.sql
 ```
+
+If your deployed site shows a generic server error after database actions, re-run this full SQL file. It recreates the missing RLS policies, helper functions, storage buckets, and admin update permissions without deleting existing data.
 
 ### 3. Environment variables
 

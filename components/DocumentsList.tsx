@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { deleteDocument } from "@/app/(main)/events/[id]/eventManagerActions";
-import { Trash2, Download, File, FileText, Image } from "lucide-react";
+import { Trash2, Download, File, FileText, Image as ImageIcon } from "lucide-react";
 import type { EventDocument } from "@/lib/types";
 
 interface DocumentsListProps {
@@ -11,7 +11,7 @@ interface DocumentsListProps {
 
 function getFileIcon(fileType: string | null) {
   if (!fileType) return <File className="h-5 w-5" />;
-  if (fileType.startsWith("image/")) return <Image className="h-5 w-5" />;
+  if (fileType.startsWith("image/")) return <ImageIcon className="h-5 w-5" />;
   if (fileType.includes("pdf") || fileType.includes("document") || fileType.includes("word")) {
     return <FileText className="h-5 w-5" />;
   }
