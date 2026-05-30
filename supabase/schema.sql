@@ -511,8 +511,14 @@ grant execute on function public.is_event_organizer(uuid, uuid) to anon, authent
 grant execute on function public.is_event_participant(uuid, uuid) to anon, authenticated;
 
 -- -----------------------------------------------------------------------------
--- Admin helper: after you register in the app, replace the email and run this.
+-- Admin helper: create/register this Auth user first, then run this.
 -- -----------------------------------------------------------------------------
--- update public.profiles
--- set role = 'admin', organizer_status = 'approved'
--- where email = 'YOUR_EMAIL@gmail.com';
+-- Default admin account requested for this project:
+--   email: info@powerway.jp
+--   password: Dao123123
+--
+-- Create the user in the app or in Supabase Dashboard > Authentication > Users
+-- with that password, then run:
+update public.profiles
+set role = 'admin', organizer_status = 'approved'
+where email = 'info@powerway.jp';

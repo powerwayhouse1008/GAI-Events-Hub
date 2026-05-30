@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Search, Ticket, Plus, UserRound } from "lucide-react";
+import { Calendar, Search, Ticket, Plus, UserRound, ShieldCheck } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -26,6 +26,11 @@ export async function Nav() {
           <Link href="/search" className="flex items-center gap-2 hover:text-purple-700">
             <Search size={18} /> さがす
           </Link>
+          {profile?.role === "admin" && (
+            <Link href="/admin/accounts" className="flex items-center gap-2 hover:text-purple-700">
+              <ShieldCheck size={18} /> Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
