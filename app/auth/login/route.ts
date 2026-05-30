@@ -1,5 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 function getSafeRedirect(path: string | null) {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return "/events";
@@ -16,7 +16,7 @@ function getAuthErrorCode(message: string) {
   return "unknown";
 }
 
-function createLoginClient(request: Request) {
+function createLoginClient(request: NextRequest) {
   const cookiesToSet: { name: string; value: string; options: CookieOptions }[] = [];
 
   const supabase = createServerClient(
@@ -25,15 +25,7 @@ function createLoginClient(request: Request) {
     {
       cookies: {
         getAll() {
-          const cookie = request.headers.get("cookie") || "";
-          return cookie
-            .split(";")
-            .map((item) => item.trim())
-            .filter(Boolean)
-            .map((item) => {
-              const [name, ...valueParts] = item.split("=");
-              return { name, value: decodeURIComponent(valueParts.join("=")) };
-            });
+          return request.cookies.getAll();
         },
         setAll(items: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.push(...items);
@@ -53,7 +45,7 @@ function redirectWithCookies(url: URL, cookiesToSet: { name: string; value: stri
   return response;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const formData = await request.formData();
   const email = String(formData.get("email") || "");
@@ -101,5 +93,7 @@ export async function POST(request: Request) {
     }
   }
 
-  return redirectWithCookies(new URL(redirectTo, requestUrl.origin), cookiesToSet);
+  const finishUrl = new URL("/auth/finish", requestUrl.origin);
+  finishUrl.searchParams.set("next", redirectTo);
+  return redirectWithCookies(finishUrl, cookiesToSet);
 }

@@ -25,6 +25,9 @@ function getEmailMessage(error: string | null) {
   if (error === "too_many") {
     return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
   }
+  if (error === "session_missing") {
+    return "ログインは成功しましたが、ブラウザにセッションを保存できませんでした。Cookieを許可してから再度ログインしてください。";
+  }
   if (error === "unknown") return "ログインできませんでした。入力内容を確認してください。";
   return "";
 }
