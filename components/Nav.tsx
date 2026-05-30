@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { unstable_noStore as noStore } from "next/cache";
 import { Calendar, Plus, Search, ShieldCheck, Ticket, UserRound } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Nav() {
+  noStore();
+
   const profile = await getProfile();
   const canCreateEvent = profile?.role === "admin" || profile?.role === "organizer";
 

@@ -1,8 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+  if (user) redirect("/events");
+
   return (
     <main className="grid min-h-screen grid-cols-1 bg-[radial-gradient(circle_at_top_left,rgba(154,78,186,.22),transparent_34%),linear-gradient(135deg,#fbf7ff,#f7ecfb_55%,#ffffff)] p-6 lg:grid-cols-[1fr_460px] lg:p-16">
       <section className="flex max-w-3xl flex-col justify-center">
