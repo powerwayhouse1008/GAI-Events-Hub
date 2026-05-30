@@ -27,7 +27,7 @@ export async function Nav() {
             <Search size={18} /> さがす
           </Link>
           {profile?.role === "admin" && (
-            <Link href="/admin/accounts" className="flex items-center gap-2 hover:text-purple-700">
+            <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
               <ShieldCheck size={18} /> Admin
             </Link>
           )}
