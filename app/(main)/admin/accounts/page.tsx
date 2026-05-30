@@ -16,14 +16,14 @@ export default async function AdminAccountsPage() {
     <main className="mx-auto max-w-[1600px] px-6 py-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-5xl font-black tracking-tight">Account Permissions</h1>
+          <h1 className="text-5xl font-black tracking-tight">アカウント権限</h1>
           <p className="mt-3 text-slate-500">
-            Grant or remove admin access for registered accounts.
+            登録済みアカウントに管理者権限を付与または解除できます。
           </p>
         </div>
         <form action={createDefaultAdmin}>
           <button className="rounded-xl bg-purple-700 px-5 py-3 font-bold text-white hover:bg-purple-800">
-            Create mai@powerway.jp Admin
+            mai@powerway.jp を管理者に設定
           </button>
         </form>
       </div>
@@ -32,12 +32,12 @@ export default async function AdminAccountsPage() {
         <table className="w-full text-left">
           <thead>
             <tr className="border-b">
-              <th className="p-3">Name</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Company</th>
-              <th className="p-3">Role</th>
-              <th className="p-3">Organizer</th>
-              <th className="p-3">Action</th>
+              <th className="p-3">名前</th>
+              <th className="p-3">メール</th>
+              <th className="p-3">会社・コミュニティ</th>
+              <th className="p-3">権限</th>
+              <th className="p-3">主催者状態</th>
+              <th className="p-3">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -60,14 +60,14 @@ export default async function AdminAccountsPage() {
                         disabled={profile.id === currentAdmin.id}
                         className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                       >
-                        Remove Admin
+                        管理者解除
                       </button>
                     </form>
                   ) : (
                     <form action={grantAdmin}>
                       <input type="hidden" name="id" value={profile.id} />
                       <button className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700">
-                        Make Admin
+                        管理者にする
                       </button>
                     </form>
                   )}
@@ -77,7 +77,7 @@ export default async function AdminAccountsPage() {
             {!profiles?.length && (
               <tr>
                 <td colSpan={6} className="p-3 text-slate-500">
-                  No accounts found.
+                  アカウントがありません。
                 </td>
               </tr>
             )}

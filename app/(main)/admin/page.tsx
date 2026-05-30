@@ -20,34 +20,34 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
-      <h1 className="text-5xl font-black tracking-tight">Admin Dashboard</h1>
+      <h1 className="text-5xl font-black tracking-tight">管理画面</h1>
       <p className="mt-3 text-slate-500">
-        Review organizer requests, approve events, and manage account permissions.
+        主催者申請、イベント公開申請、管理者権限を確認できます。
       </p>
 
       <div className="mt-8 grid gap-5 md:grid-cols-3">
         <Link href="/admin/organizers" className="card p-7 hover:bg-purple-50">
           <p className="text-sm font-bold uppercase tracking-wide text-purple-600">
-            Organizer Requests
+            主催者申請
           </p>
           <p className="mt-4 text-4xl font-black">{pendingOrganizers}</p>
-          <p className="mt-2 text-slate-500">Pending organizer accounts</p>
+          <p className="mt-2 text-slate-500">承認待ちの主催者アカウント</p>
         </Link>
 
         <Link href="/admin/events" className="card p-7 hover:bg-purple-50">
           <p className="text-sm font-bold uppercase tracking-wide text-purple-600">
-            Event Approval
+            イベント承認
           </p>
           <p className="mt-4 text-4xl font-black">{pendingEvents}</p>
-          <p className="mt-2 text-slate-500">Pending events</p>
+          <p className="mt-2 text-slate-500">公開承認待ちのイベント</p>
         </Link>
 
         <Link href="/admin/accounts" className="card p-7 hover:bg-purple-50">
           <p className="text-sm font-bold uppercase tracking-wide text-purple-600">
-            Accounts
+            アカウント権限
           </p>
           <p className="mt-4 text-4xl font-black">Admin</p>
-          <p className="mt-2 text-slate-500">Grant or remove admin access</p>
+          <p className="mt-2 text-slate-500">管理者権限の付与と解除</p>
         </Link>
       </div>
     </main>

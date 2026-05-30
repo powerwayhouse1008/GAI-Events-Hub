@@ -151,14 +151,14 @@ export function EventForm({ event }: EventFormProps) {
             }}
           />
           <p className="mt-4 text-center font-bold text-purple-700">
-            Upload event cover image
+            イベント画像をアップロード
           </p>
         </label>
       </section>
 
       <section className="grid gap-5 rounded-3xl border border-purple-100 bg-white/45 p-7 shadow-sm backdrop-blur">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-          Events are submitted as pending. Admin approval is required before they are public.
+          イベントは承認待ちとして作成されます。公開するには管理者の承認が必要です。
         </div>
 
         <input
@@ -171,8 +171,8 @@ export function EventForm({ event }: EventFormProps) {
 
         <div className="grid gap-4 rounded-2xl bg-white/70 p-4 md:grid-cols-[110px_1fr_160px]">
           <div className="grid gap-3 font-bold text-purple-600">
-            <span>Start</span>
-            <span>End</span>
+            <span>開始</span>
+            <span>終了</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <input className="input" name="start_date" type="date" defaultValue={datePart(event?.starts_at)} required />
@@ -185,12 +185,12 @@ export function EventForm({ event }: EventFormProps) {
           </div>
         </div>
 
-        <input className="input" name="location" placeholder="Venue or address" defaultValue={event?.location || ""} />
-        <input className="input" name="online_url" placeholder="Online URL" defaultValue={event?.online_url || ""} />
+        <input className="input" name="location" placeholder="会場または住所" defaultValue={event?.location || ""} />
+        <input className="input" name="online_url" placeholder="オンラインURL" defaultValue={event?.online_url || ""} />
         <textarea
           className="input min-h-32"
           name="description"
-          placeholder="Event description"
+          placeholder="イベント説明"
           defaultValue={event?.description || ""}
         />
 
@@ -198,7 +198,7 @@ export function EventForm({ event }: EventFormProps) {
           <input
             className="input"
             name="organizer_name"
-            placeholder="Organizer name"
+            placeholder="主催者名"
             defaultValue={event?.organizer_name || "Global AI Industry Alliance"}
           />
           <select className="input" name="category" defaultValue={event?.category || "AI"}>
@@ -216,25 +216,25 @@ export function EventForm({ event }: EventFormProps) {
             name="ticket_price"
             type="number"
             min="0"
-            placeholder="Ticket price"
+            placeholder="チケット価格"
             defaultValue={event?.ticket_price || 0}
           />
           <select className="input" name="approval_mode" defaultValue={event?.approval_mode || "manual"}>
-            <option value="manual">Manual participant review</option>
-            <option value="auto">Auto approve participants</option>
+            <option value="manual">参加者を手動承認</option>
+            <option value="auto">参加者を自動承認</option>
           </select>
           <input
             className="input"
             name="capacity"
             type="number"
             min="0"
-            placeholder="Capacity"
+            placeholder="定員"
             defaultValue={event?.capacity || ""}
           />
         </div>
 
         <button disabled={loading} className="btn btn-primary w-full text-lg" type="submit">
-          {loading ? "Saving..." : isEditing ? "Update event and request approval" : "Create event"}
+          {loading ? "保存中..." : isEditing ? "イベントを更新して承認申請" : "イベント作成"}
         </button>
       </section>
     </form>

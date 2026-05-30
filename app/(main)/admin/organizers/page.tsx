@@ -23,20 +23,20 @@ export default async function AdminOrganizersPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12">
       <div className="mx-auto max-w-[1600px]">
-        <h1 className="text-5xl font-black tracking-tight">Organizer Approval</h1>
+        <h1 className="text-5xl font-black tracking-tight">主催者アカウント承認</h1>
         <p className="mt-3 text-slate-500">
-          Approve or reject accounts that requested organizer access.
+          主催者としてイベントを作成したいアカウントを承認または却下できます。
         </p>
 
         <section className="card mt-8 overflow-x-auto p-7">
-          <h2 className="text-3xl font-black">Pending Requests</h2>
+          <h2 className="text-3xl font-black">承認待ち</h2>
           <table className="mt-6 w-full text-left">
             <thead>
               <tr className="border-b">
-                <th className="p-3">Name</th>
-                <th className="p-3">Email</th>
-                <th className="p-3">Company</th>
-                <th className="p-3">Action</th>
+                <th className="p-3">名前</th>
+                <th className="p-3">メール</th>
+                <th className="p-3">会社・コミュニティ</th>
+                <th className="p-3">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -50,13 +50,13 @@ export default async function AdminOrganizersPage() {
                       <form action={approveOrganizer}>
                         <input type="hidden" name="id" value={profile.id} />
                         <button className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white">
-                          Approve
+                          承認
                         </button>
                       </form>
                       <form action={rejectOrganizer}>
                         <input type="hidden" name="id" value={profile.id} />
                         <button className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white">
-                          Reject
+                          却下
                         </button>
                       </form>
                     </div>
@@ -66,7 +66,7 @@ export default async function AdminOrganizersPage() {
               {!pending?.length && (
                 <tr>
                   <td colSpan={4} className="p-3 text-slate-500">
-                    No pending organizer requests.
+                    承認待ちの主催者申請はありません。
                   </td>
                 </tr>
               )}
@@ -75,13 +75,13 @@ export default async function AdminOrganizersPage() {
         </section>
 
         <section className="card mt-8 overflow-x-auto p-7">
-          <h2 className="text-3xl font-black">Approved Organizers</h2>
+          <h2 className="text-3xl font-black">承認済み主催者</h2>
           <table className="mt-6 w-full text-left">
             <thead>
               <tr className="border-b">
-                <th className="p-3">Name</th>
-                <th className="p-3">Email</th>
-                <th className="p-3">Company</th>
+                <th className="p-3">名前</th>
+                <th className="p-3">メール</th>
+                <th className="p-3">会社・コミュニティ</th>
               </tr>
             </thead>
             <tbody>
@@ -95,7 +95,7 @@ export default async function AdminOrganizersPage() {
               {!approved?.length && (
                 <tr>
                   <td colSpan={3} className="p-3 text-slate-500">
-                    No approved organizers yet.
+                    承認済み主催者はまだいません。
                   </td>
                 </tr>
               )}
