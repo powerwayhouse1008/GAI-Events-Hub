@@ -14,6 +14,7 @@ export async function registerEvent(formData: FormData) {
   const { data: event } = await supabase.from("events").select("*").eq("id", eventId).single();
 
   if (!event) redirect("/events");
+  if (event.status !== "published") redirect(`/events/${eventId}`);
 
   const status = event.approval_mode === "auto" ? "approved" : "pending";
 
