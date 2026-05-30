@@ -3,14 +3,29 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
 import { createDefaultAdmin, grantAdmin, revokeAdmin } from "./accountActions";
 
+function uniqueProfilesByEmail(profiles: Profile[]) {
+  const map = new Map<string, Profile>();
+
+  for (const profile of profiles) {
+    const key = (profile.email || profile.id).toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, profile);
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 export default async function AdminAccountsPage() {
   const currentAdmin = await requireAdmin();
   const supabase = createAdminClient();
 
-  const { data: profiles = [] } = await supabase
+  const { data: rawProfiles = [] } = await supabase
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
+
+  const profiles = uniqueProfilesByEmail((rawProfiles ?? []) as Profile[]);
 
   return (
     <main className="mx-auto max-w-[1600px] px-6 py-10">
@@ -41,7 +56,7 @@ export default async function AdminAccountsPage() {
             </tr>
           </thead>
           <tbody>
-            {(profiles as Profile[]).map((profile) => (
+            {profiles.map((profile) => (
               <tr key={profile.id} className="border-b">
                 <td className="p-3 font-bold">{profile.display_name || "-"}</td>
                 <td className="p-3">{profile.email || "-"}</td>
@@ -74,7 +89,7 @@ export default async function AdminAccountsPage() {
                 </td>
               </tr>
             ))}
-            {!profiles?.length && (
+            {!profiles.length && (
               <tr>
                 <td colSpan={6} className="p-3 text-slate-500">
                   アカウントがありません。

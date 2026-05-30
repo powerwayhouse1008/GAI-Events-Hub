@@ -4,15 +4,39 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const DEFAULT_ADMIN_EMAIL = "mai@powerway.jp";
+const DEFAULT_ADMIN_PASSWORD = "Dao123123";
+
+async function findAuthUserByEmail(email: string) {
+  const supabase = createAdminClient();
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+    if (error) throw error;
+
+    const user = data.users.find(
+      (candidate) => candidate.email?.toLowerCase() === email.toLowerCase()
+    );
+    if (user) return user;
+    if (data.users.length < 100) return null;
+    page += 1;
+  }
+}
+
 export async function grantAdmin(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id"));
 
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({ role: "admin", organizer_status: "approved" })
     .eq("id", id);
+
+  if (error) {
+    throw new Error("管理者権限を付与できませんでした。");
+  }
 
   revalidatePath("/admin/accounts");
 }
@@ -23,13 +47,17 @@ export async function revokeAdmin(formData: FormData) {
   const id = String(formData.get("id"));
 
   if (id === currentAdmin.id) {
-    throw new Error("You cannot remove your own admin role.");
+    throw new Error("自分自身の管理者権限は解除できません。");
   }
 
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({ role: "member", organizer_status: "none" })
     .eq("id", id);
+
+  if (error) {
+    throw new Error("管理者権限を解除できませんでした。");
+  }
 
   revalidatePath("/admin/accounts");
 }
@@ -37,42 +65,58 @@ export async function revokeAdmin(formData: FormData) {
 export async function createDefaultAdmin() {
   await requireAdmin();
   const supabase = createAdminClient();
-  const email = "mai@powerway.jp";
-  const password = "Dao123123";
+  const email = DEFAULT_ADMIN_EMAIL;
+  const password = DEFAULT_ADMIN_PASSWORD;
 
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
+  let user = await findAuthUserByEmail(email);
 
-  let userId = existingProfile?.id;
-
-  if (!userId) {
+  if (user) {
+    const { data, error } = await supabase.auth.admin.updateUserById(user.id, {
+      password,
+      email_confirm: true,
+      user_metadata: {
+        ...user.user_metadata,
+        display_name: user.user_metadata?.display_name || "MAI"
+      }
+    });
+    if (error) throw error;
+    user = data.user;
+  } else {
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: {
-        display_name: "Powerway Admin",
+        display_name: "MAI",
         requested_role: "member"
       }
     });
-
-    if (error) {
-      throw error;
-    }
-
-    userId = data.user.id;
+    if (error) throw error;
+    user = data.user;
   }
 
-  await supabase.from("profiles").upsert({
-    id: userId,
+  const { data: duplicateProfiles } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", email);
+
+  await Promise.all(
+    (duplicateProfiles ?? [])
+      .filter((profile) => profile.id !== user.id)
+      .map((profile) => supabase.from("profiles").update({ email: null }).eq("id", profile.id))
+  );
+
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
     email,
     display_name: "MAI",
     role: "admin",
     organizer_status: "approved"
   });
+
+  if (error) {
+    throw new Error("デフォルト管理者を作成できませんでした。");
+  }
 
   revalidatePath("/admin/accounts");
 }
