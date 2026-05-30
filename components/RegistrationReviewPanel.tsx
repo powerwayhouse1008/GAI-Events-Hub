@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Check, UserCheck, UserRound, X } from "lucide-react";
 import { setRegistrationStatus } from "@/app/(main)/organizer-dashboard/registrationActions";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type Participant = {
   id: string;
@@ -35,18 +37,25 @@ function ParticipantRow({
   showActions: boolean;
   onUpdated: () => Promise<void>;
 }) {
+  const [loadingStatus, setLoadingStatus] = useState<"approved" | "rejected" | null>(null);
+
   async function update(status: "approved" | "rejected") {
-    await setRegistrationStatus(participant.id, status);
-    await onUpdated();
+    setLoadingStatus(status);
+    try {
+      await setRegistrationStatus(participant.id, status);
+      await onUpdated();
+    } finally {
+      setLoadingStatus(null);
+    }
   }
 
   return (
     <div className="grid gap-3 border-b border-slate-100 py-4 md:grid-cols-[1fr_1fr_120px_auto] md:items-center">
       <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-500">
+        <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-slate-100 text-slate-500">
           {participant.profiles?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={participant.profiles.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+            <img src={participant.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
           ) : (
             <UserRound size={18} />
           )}
@@ -64,30 +73,36 @@ function ParticipantRow({
           ? "承認済み"
           : participant.status === "pending"
             ? "承認待ち"
-            : participant.status}
+            : participant.status === "rejected"
+              ? "却下"
+              : participant.status}
       </span>
       {showActions ? (
         <div className="flex gap-2">
           <button
             onClick={() => update("approved")}
-            className="inline-flex items-center gap-1 rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700"
+            disabled={loadingStatus !== null}
+            className="inline-flex min-w-20 items-center justify-center gap-1 rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-wait disabled:opacity-80"
             type="button"
+            data-skip-global-loading="true"
           >
-            <Check size={16} /> 承認
+            {loadingStatus === "approved" ? <LoadingDots /> : <><Check size={16} /> 承認</>}
           </button>
           <button
             onClick={() => update("rejected")}
-            className="inline-flex items-center gap-1 rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700"
+            disabled={loadingStatus !== null}
+            className="inline-flex min-w-20 items-center justify-center gap-1 rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-wait disabled:opacity-80"
             type="button"
+            data-skip-global-loading="true"
           >
-            <X size={16} /> 却下
+            {loadingStatus === "rejected" ? <LoadingDots /> : <><X size={16} /> 却下</>}
           </button>
         </div>
       ) : (
         <p className="text-sm text-slate-400">{new Date(participant.created_at).toLocaleString("ja-JP")}</p>
       )}
       {participant.message && (
-        <p className="md:col-span-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+        <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 md:col-span-4">
           {participant.message}
         </p>
       )}
