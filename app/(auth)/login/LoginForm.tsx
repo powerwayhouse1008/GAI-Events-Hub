@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { signInEmail } from "./loginActions";
 
 export function LoginForm() {
   const supabase = createClient();
@@ -23,18 +24,15 @@ export function LoginForm() {
     });
   }
 
-  async function signInEmail(formData: FormData) {
+  async function handleEmailLogin(formData: FormData) {
     setLoading(true);
     setError("");
-    const email = String(formData.get("email") || "");
-    const password = String(formData.get("password") || "");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+
+    const result = await signInEmail(formData);
+    if (result?.error) {
       setLoading(false);
-      setError(error.message);
-      return;
+      setError(result.error);
     }
-    window.location.href = redirectTo;
   }
 
   return (
@@ -53,7 +51,8 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <form action={signInEmail} className="grid gap-4">
+      <form action={handleEmailLogin} className="grid gap-4">
+        <input type="hidden" name="redirectTo" value={redirectTo} />
         <label className="label">Email<input className="input mt-2" name="email" type="email" required /></label>
         <label className="label">Password<input className="input mt-2" name="password" type="password" required /></label>
         {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
