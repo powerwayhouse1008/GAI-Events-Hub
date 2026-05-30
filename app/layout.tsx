@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GlobalButtonLoading } from "@/components/GlobalButtonLoading";
 import "./globals.css";
 
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body>
         <GlobalButtonLoading />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
