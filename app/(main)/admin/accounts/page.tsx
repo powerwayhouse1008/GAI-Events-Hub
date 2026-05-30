@@ -1,31 +1,91 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Profile } from "@/lib/types";
+import type { ApprovalStatus, Profile, UserRole } from "@/lib/types";
 import { createDefaultAdmin, grantAdmin, revokeAdmin } from "./accountActions";
 
-function uniqueProfilesByEmail(profiles: Profile[]) {
-  const map = new Map<string, Profile>();
+type AccountRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  company_name: string | null;
+  role: UserRole;
+  organizer_status: ApprovalStatus;
+};
+
+async function listAllAuthUsers() {
+  const supabase = createAdminClient();
+  const users = [];
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+    if (error) throw new Error("アカウント一覧を読み込めませんでした。");
+
+    users.push(...data.users);
+    if (data.users.length < 100) break;
+    page += 1;
+  }
+
+  return users;
+}
+
+function toAccountRows(profiles: Profile[], authUsers: Awaited<ReturnType<typeof listAllAuthUsers>>) {
+  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
+  const rows = new Map<string, AccountRow>();
+
+  for (const user of authUsers) {
+    const profile = profileById.get(user.id);
+    rows.set(user.id, {
+      id: user.id,
+      email: profile?.email || user.email || null,
+      display_name:
+        profile?.display_name ||
+        String(user.user_metadata?.display_name || user.user_metadata?.full_name || "") ||
+        null,
+      company_name:
+        profile?.company_name ||
+        (typeof user.user_metadata?.company_name === "string" ? user.user_metadata.company_name : null),
+      role: profile?.role || "member",
+      organizer_status:
+        profile?.organizer_status ||
+        (user.user_metadata?.requested_role === "organizer" ? "pending" : "none")
+    });
+  }
 
   for (const profile of profiles) {
-    const key = (profile.email || profile.id).toLowerCase();
-    if (!map.has(key)) {
-      map.set(key, profile);
+    if (!rows.has(profile.id)) {
+      rows.set(profile.id, {
+        id: profile.id,
+        email: profile.email,
+        display_name: profile.display_name,
+        company_name: profile.company_name,
+        role: profile.role,
+        organizer_status: profile.organizer_status
+      });
     }
   }
 
-  return Array.from(map.values());
+  const uniqueByEmail = new Map<string, AccountRow>();
+  for (const row of rows.values()) {
+    const key = (row.email || row.id).toLowerCase();
+    if (!uniqueByEmail.has(key)) uniqueByEmail.set(key, row);
+  }
+
+  return Array.from(uniqueByEmail.values()).sort((a, b) =>
+    (a.email || "").localeCompare(b.email || "")
+  );
 }
 
 export default async function AdminAccountsPage() {
   const currentAdmin = await requireAdmin();
   const supabase = createAdminClient();
 
-  const { data: rawProfiles = [] } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data: rawProfiles = [] }, authUsers] = await Promise.all([
+    supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    listAllAuthUsers()
+  ]);
 
-  const profiles = uniqueProfilesByEmail((rawProfiles ?? []) as Profile[]);
+  const accounts = toAccountRows((rawProfiles ?? []) as Profile[], authUsers);
 
   return (
     <main className="mx-auto max-w-[1600px] px-6 py-10">
@@ -56,40 +116,42 @@ export default async function AdminAccountsPage() {
             </tr>
           </thead>
           <tbody>
-            {profiles.map((profile) => (
-              <tr key={profile.id} className="border-b">
-                <td className="p-3 font-bold">{profile.display_name || "-"}</td>
-                <td className="p-3">{profile.email || "-"}</td>
-                <td className="p-3">{profile.company_name || "-"}</td>
+            {accounts.map((account) => (
+              <tr key={account.id} className="border-b">
+                <td className="p-3 font-bold">{account.display_name || "-"}</td>
+                <td className="p-3">{account.email || "-"}</td>
+                <td className="p-3">{account.company_name || "-"}</td>
                 <td className="p-3">
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                    {profile.role}
+                    {account.role}
                   </span>
                 </td>
-                <td className="p-3">{profile.organizer_status}</td>
+                <td className="p-3">{account.organizer_status}</td>
                 <td className="p-3">
-                  {profile.role === "admin" ? (
-                    <form action={revokeAdmin}>
-                      <input type="hidden" name="id" value={profile.id} />
+                  <div className="flex flex-wrap gap-2">
+                    <form action={grantAdmin}>
+                      <input type="hidden" name="id" value={account.id} />
                       <button
-                        disabled={profile.id === currentAdmin.id}
+                        disabled={account.role === "admin"}
+                        className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        管理者にする
+                      </button>
+                    </form>
+                    <form action={revokeAdmin}>
+                      <input type="hidden" name="id" value={account.id} />
+                      <button
+                        disabled={account.role !== "admin" || account.id === currentAdmin.id}
                         className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                       >
                         管理者解除
                       </button>
                     </form>
-                  ) : (
-                    <form action={grantAdmin}>
-                      <input type="hidden" name="id" value={profile.id} />
-                      <button className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700">
-                        管理者にする
-                      </button>
-                    </form>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
-            {!profiles.length && (
+            {!accounts.length && (
               <tr>
                 <td colSpan={6} className="p-3 text-slate-500">
                   アカウントがありません。

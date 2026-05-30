@@ -71,6 +71,26 @@ export async function getProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   if (data) {
+    if (
+      user.user_metadata?.requested_role === "organizer" &&
+      data.role === "member" &&
+      (data.organizer_status === "none" || data.organizer_status === "rejected")
+    ) {
+      try {
+        const admin = createAdminClient();
+        const { data: updatedProfile } = await admin
+          .from("profiles")
+          .update({ organizer_status: "pending" })
+          .eq("id", user.id)
+          .select("*")
+          .single();
+
+        if (updatedProfile) return updatedProfile as Profile;
+      } catch {
+        return { ...(data as Profile), organizer_status: "pending" };
+      }
+    }
+
     return data as Profile;
   }
 

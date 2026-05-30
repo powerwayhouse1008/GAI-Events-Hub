@@ -24,10 +24,41 @@ async function findAuthUserByEmail(email: string) {
   }
 }
 
+async function findAuthUserById(id: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.auth.admin.getUserById(id);
+  if (error) return null;
+  return data.user;
+}
+
+async function ensureProfile(id: string) {
+  const supabase = createAdminClient();
+  const user = await findAuthUserById(id);
+  if (!user) return null;
+
+  const profile = {
+    id: user.id,
+    email: user.email || null,
+    display_name:
+      String(user.user_metadata?.display_name || user.user_metadata?.full_name || "") ||
+      user.email?.split("@")[0] ||
+      "User",
+    avatar_url: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
+    company_name:
+      typeof user.user_metadata?.company_name === "string" ? user.user_metadata.company_name : null,
+    role: "member",
+    organizer_status: user.user_metadata?.requested_role === "organizer" ? "pending" : "none"
+  };
+
+  await supabase.from("profiles").upsert(profile, { onConflict: "id" });
+  return profile;
+}
+
 export async function grantAdmin(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id"));
+  await ensureProfile(id);
 
   const { error } = await supabase
     .from("profiles")
@@ -45,6 +76,7 @@ export async function revokeAdmin(formData: FormData) {
   const currentAdmin = await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id"));
+  await ensureProfile(id);
 
   if (id === currentAdmin.id) {
     throw new Error("自分自身の管理者権限は解除できません。");

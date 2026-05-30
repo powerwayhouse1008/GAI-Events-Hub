@@ -1,15 +1,18 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { approveOrganizer, rejectOrganizer } from "./organizerActions";
 import type { Profile } from "@/lib/types";
+import { approveOrganizer, rejectOrganizer, syncOrganizerRequests } from "./organizerActions";
 
 export default async function AdminOrganizersPage() {
   await requireAdmin();
+  await syncOrganizerRequests();
+
   const supabase = createAdminClient();
 
   const { data: pending = [] } = await supabase
     .from("profiles")
     .select("*")
+    .eq("role", "member")
     .eq("organizer_status", "pending")
     .order("created_at", { ascending: false });
 
@@ -40,7 +43,7 @@ export default async function AdminOrganizersPage() {
               </tr>
             </thead>
             <tbody>
-              {(pending as Profile[]).map((profile) => (
+              {((pending ?? []) as Profile[]).map((profile) => (
                 <tr key={profile.id} className="border-b">
                   <td className="p-3">{profile.display_name || "-"}</td>
                   <td className="p-3">{profile.email || "-"}</td>
@@ -49,13 +52,13 @@ export default async function AdminOrganizersPage() {
                     <div className="flex gap-2">
                       <form action={approveOrganizer}>
                         <input type="hidden" name="id" value={profile.id} />
-                        <button className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white">
+                        <button className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white hover:bg-green-700">
                           承認
                         </button>
                       </form>
                       <form action={rejectOrganizer}>
                         <input type="hidden" name="id" value={profile.id} />
-                        <button className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white">
+                        <button className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700">
                           却下
                         </button>
                       </form>
@@ -85,7 +88,7 @@ export default async function AdminOrganizersPage() {
               </tr>
             </thead>
             <tbody>
-              {(approved as Profile[]).map((profile) => (
+              {((approved ?? []) as Profile[]).map((profile) => (
                 <tr key={profile.id} className="border-b">
                   <td className="p-3">{profile.display_name || "-"}</td>
                   <td className="p-3">{profile.email || "-"}</td>
