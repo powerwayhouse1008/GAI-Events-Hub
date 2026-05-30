@@ -5,10 +5,16 @@ export default async function NewEventPage() {
   await requireOrganizer();
 
   return (
-    <main className="min-h-screen bg-gai-pink">
+    <main className="min-h-screen bg-[#f8ecfb]">
       <div className="mx-auto max-w-[1800px] px-6 py-10">
-        <h1 className="text-5xl font-black tracking-tight">AIイベントを作成</h1>
-        <p className="mt-3 text-slate-600">AI業界のイベント情報を登録して、コミュニティに共有しましょう。</p>
+        <div className="flex flex-wrap items-center justify-between gap-4 text-sm font-bold text-purple-700">
+          <div className="flex items-center gap-4">
+            <span>イベント</span>
+            <span>カレンダー</span>
+            <span>さがす</span>
+          </div>
+          <span>公開前に管理者承認が必要です</span>
+        </div>
         <EventForm />
       </div>
     </main>

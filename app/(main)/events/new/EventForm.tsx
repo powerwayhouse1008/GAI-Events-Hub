@@ -156,7 +156,7 @@ export function EventForm({ event }: EventFormProps) {
         </label>
       </section>
 
-      <section className="grid gap-5 rounded-3xl border border-purple-100 bg-white/70 p-7 shadow-sm backdrop-blur">
+      <section className="grid gap-5 rounded-3xl border border-purple-100 bg-white/45 p-7 shadow-sm backdrop-blur">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
           Events are submitted as pending. Admin approval is required before they are public.
         </div>
@@ -164,7 +164,7 @@ export function EventForm({ event }: EventFormProps) {
         <input
           className="w-full bg-transparent text-6xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300"
           name="title"
-          placeholder="Event title"
+          placeholder="イベント名"
           defaultValue={event?.title || ""}
           required
         />

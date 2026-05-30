@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Calendar, Search, Ticket, Plus, UserRound, ShieldCheck } from "lucide-react";
+import { Calendar, Plus, Search, ShieldCheck, Ticket, UserRound } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Nav() {
   const profile = await getProfile();
+  const canCreateEvent = profile?.role === "admin" || profile?.role === "organizer";
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/50 bg-white/80 backdrop-blur-xl">
@@ -16,7 +17,7 @@ export async function Nav() {
           <span className="hidden sm:block">Global AI Industry Alliance</span>
         </Link>
 
-        <nav className="hidden items-center gap-7 font-bold text-slate-700 md:flex">
+        <nav className="hidden items-center gap-6 font-bold text-slate-700 md:flex">
           <Link href="/events" className="flex items-center gap-2 hover:text-purple-700">
             <Ticket size={18} /> イベント
           </Link>
@@ -26,6 +27,14 @@ export async function Nav() {
           <Link href="/search" className="flex items-center gap-2 hover:text-purple-700">
             <Search size={18} /> さがす
           </Link>
+          {canCreateEvent && (
+            <Link
+              href="/events/new"
+              className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 hover:bg-purple-200"
+            >
+              <Plus size={18} /> イベント作成
+            </Link>
+          )}
           {profile?.role === "admin" && (
             <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
               <ShieldCheck size={18} /> Admin
@@ -44,12 +53,6 @@ export async function Nav() {
 
           {profile ? (
             <>
-              {(profile.role === "admin" || profile.role === "organizer") && (
-                <Link href="/events/new" className="btn btn-primary">
-                  <Plus size={18} />
-                  <span className="hidden sm:ml-2 sm:inline">イベント作成</span>
-                </Link>
-              )}
               <Link
                 href="/me"
                 className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-slate-100"
