@@ -5,6 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
 import type { Profile } from "@/lib/types";
 
+function refreshAdminPages() {
+  revalidatePath("/admin");
+  revalidatePath("/admin/organizers");
+  revalidatePath("/admin/accounts");
+}
+
 function profileFromAuthUser(user: {
   id: string;
   email?: string | null;
@@ -32,7 +38,7 @@ export async function syncOrganizerRequests() {
 
   while (true) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
-    if (error) throw new Error("主催者申請を読み込めませんでした。");
+    if (error) return;
 
     const requestedOrganizers = data.users.filter(
       (user) => user.user_metadata?.requested_role === "organizer"
@@ -46,7 +52,7 @@ export async function syncOrganizerRequests() {
         .maybeSingle();
 
       if (!profile) {
-        await supabase.from("profiles").upsert(profileFromAuthUser(user));
+        await supabase.from("profiles").upsert(profileFromAuthUser(user), { onConflict: "id" });
         continue;
       }
 
@@ -69,33 +75,27 @@ export async function syncOrganizerRequests() {
 export async function approveOrganizer(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
-  const id = String(formData.get("id"));
+  const id = String(formData.get("id") || "");
+  if (!id) return;
 
-  const { error } = await supabase
+  await supabase
     .from("profiles")
     .update({ role: "organizer", organizer_status: "approved" })
     .eq("id", id);
 
-  if (error) throw new Error("主催者を承認できませんでした。");
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/organizers");
-  revalidatePath("/admin/accounts");
+  refreshAdminPages();
 }
 
 export async function rejectOrganizer(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
-  const id = String(formData.get("id"));
+  const id = String(formData.get("id") || "");
+  if (!id) return;
 
-  const { error } = await supabase
+  await supabase
     .from("profiles")
     .update({ role: "member", organizer_status: "rejected" })
     .eq("id", id);
 
-  if (error) throw new Error("主催者申請を却下できませんでした。");
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/organizers");
-  revalidatePath("/admin/accounts");
+  refreshAdminPages();
 }

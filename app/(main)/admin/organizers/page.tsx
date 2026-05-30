@@ -4,7 +4,7 @@ import type { Profile } from "@/lib/types";
 import { approveOrganizer, rejectOrganizer, syncOrganizerRequests } from "./organizerActions";
 
 export default async function AdminOrganizersPage() {
-  await requireAdmin();
+  const currentAdmin = await requireAdmin();
   await syncOrganizerRequests();
 
   const supabase = createAdminClient();
@@ -28,7 +28,10 @@ export default async function AdminOrganizersPage() {
       <div className="mx-auto max-w-[1600px]">
         <h1 className="text-5xl font-black tracking-tight">主催者アカウント承認</h1>
         <p className="mt-3 text-slate-500">
-          主催者としてイベントを作成したいアカウントを承認または却下できます。
+          管理者権限を持つすべてのアカウントが、主催者申請を承認または却下できます。
+        </p>
+        <p className="mt-2 text-sm font-bold text-purple-700">
+          現在の管理者: {currentAdmin.email || currentAdmin.display_name || currentAdmin.id}
         </p>
 
         <section className="card mt-8 overflow-x-auto p-7">
@@ -49,7 +52,7 @@ export default async function AdminOrganizersPage() {
                   <td className="p-3">{profile.email || "-"}</td>
                   <td className="p-3">{profile.company_name || "-"}</td>
                   <td className="p-3">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <form action={approveOrganizer}>
                         <input type="hidden" name="id" value={profile.id} />
                         <button className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white hover:bg-green-700">
