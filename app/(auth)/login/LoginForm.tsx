@@ -1,22 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signInEmail } from "./loginActions";
+import { createClient } from "@/lib/supabase/client";
 
-const initialState = {
-  error: ""
-};
-
-function EmailLoginButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button disabled={pending} className="btn btn-primary w-full" type="submit">
-      {pending ? "ログイン中..." : "ログイン"}
-    </button>
-  );
+function getSafeRedirect(path: string | null) {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return "/events";
+  if (path.startsWith("/login") || path.startsWith("/register")) return "/events";
+  return path;
 }
 
 function getOAuthMessage(error: string | null) {
@@ -27,32 +18,73 @@ function getOAuthMessage(error: string | null) {
   return "";
 }
 
+function getJapaneseAuthError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("invalid login credentials")) {
+    return "メールアドレスまたはパスワードが正しくありません。";
+  }
+
+  if (normalized.includes("email not confirmed")) {
+    return "メール認証が完了していません。確認メールを開いて認証してください。";
+  }
+
+  if (normalized.includes("too many")) {
+    return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
+  }
+
+  return `ログインできませんでした。${message}`;
+}
+
 export function LoginForm() {
+  const supabase = createClient();
   const params = useSearchParams();
-  const redirectTo = params.get("redirectTo") || "/me";
+  const redirectTo = getSafeRedirect(params.get("redirectTo"));
   const oauthMessage = getOAuthMessage(params.get("oauth_error"));
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [state, formAction] = useActionState(signInEmail, initialState);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [error, setError] = useState(oauthMessage);
 
   function signInWithGoogle() {
     setGoogleLoading(true);
     window.location.href = `/auth/google?mode=login&next=${encodeURIComponent(redirectTo)}`;
   }
 
+  async function signInWithEmail(formData: FormData) {
+    setEmailLoading(true);
+    setError("");
+
+    const email = String(formData.get("email") || "");
+    const password = String(formData.get("password") || "");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      setError(getJapaneseAuthError(error.message));
+      setEmailLoading(false);
+      return;
+    }
+
+    window.location.href = redirectTo;
+  }
+
   return (
     <div className="mt-8">
       <button
         onClick={signInWithGoogle}
-        disabled={googleLoading}
+        disabled={googleLoading || emailLoading}
         type="button"
         className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-4 font-black hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {googleLoading ? "Googleへ移動中..." : "Googleでログイン"}
       </button>
 
-      {(oauthMessage || state.error) && (
+      {error && (
         <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-          {oauthMessage || state.error}
+          {error}
         </p>
       )}
 
@@ -62,8 +94,7 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <form action={formAction} className="grid gap-4">
-        <input type="hidden" name="redirectTo" value={redirectTo} />
+      <form action={signInWithEmail} className="grid gap-4">
         <label className="label">
           メールアドレス
           <input className="input mt-2" name="email" type="email" required />
@@ -72,7 +103,9 @@ export function LoginForm() {
           パスワード
           <input className="input mt-2" name="password" type="password" required />
         </label>
-        <EmailLoginButton />
+        <button disabled={emailLoading || googleLoading} className="btn btn-primary w-full" type="submit">
+          {emailLoading ? "ログイン中..." : "ログイン"}
+        </button>
       </form>
     </div>
   );

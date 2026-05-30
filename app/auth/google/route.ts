@@ -15,7 +15,7 @@ function getOAuthErrorUrl(origin: string, mode: string) {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const mode = requestUrl.searchParams.get("mode") === "register" ? "register" : "login";
-  const next = getSafePath(requestUrl.searchParams.get("next"), "/me");
+  const next = getSafePath(requestUrl.searchParams.get("next"), "/events");
   const requestedRole =
     requestUrl.searchParams.get("requested_role") === "organizer" ? "organizer" : "member";
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
