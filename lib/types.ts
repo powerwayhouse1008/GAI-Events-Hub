@@ -25,6 +25,7 @@ export type Event = {
   location: string | null;
   online_url: string | null;
   cover_url: string | null;
+  theme_color?: string | null;
   starts_at: string;
   ends_at: string | null;
   capacity: number | null;

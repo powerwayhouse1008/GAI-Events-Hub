@@ -14,6 +14,7 @@ type SaveEventInput = {
   location: string;
   onlineUrl: string;
   coverUrl: string | null;
+  themeColor: string;
   startsAt: string;
   endsAt: string;
   capacity: number | null;
@@ -96,6 +97,7 @@ export async function saveEvent(input: SaveEventInput) {
     location: input.location,
     online_url: input.onlineUrl,
     cover_url: input.coverUrl,
+    theme_color: input.themeColor,
     starts_at: input.startsAt,
     ends_at: input.endsAt,
     capacity: input.capacity,
