@@ -15,13 +15,40 @@ export async function getProfile(): Promise<Profile | null> {
   if (!user) return null;
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
+    .maybeSingle();
+
+  if (data) {
+    return data as Profile;
+  }
+
+  if (error) {
+    return null;
+  }
+
+  const requestedRole = user.user_metadata?.requested_role;
+  const { data: createdProfile } = await supabase
+    .from("profiles")
+    .insert({
+      id: user.id,
+      email: user.email,
+      display_name:
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "User",
+      avatar_url: user.user_metadata?.avatar_url || null,
+      company_name: user.user_metadata?.company_name || null,
+      role: "member",
+      organizer_status: requestedRole === "organizer" ? "pending" : "none"
+    })
+    .select("*")
     .single();
 
-  return data as Profile | null;
+  return createdProfile as Profile | null;
 }
 
 export async function requireUser() {
