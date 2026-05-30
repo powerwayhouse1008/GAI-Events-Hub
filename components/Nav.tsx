@@ -5,6 +5,9 @@ import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Nav() {
   const profile = await getProfile();
+  const canCreateEvent =
+    profile?.role === "admin" ||
+    (profile?.role === "organizer" && profile.organizer_status === "approved");
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/50 bg-white/80 backdrop-blur-xl">
@@ -26,12 +29,14 @@ export async function Nav() {
           <Link href="/search" className="flex items-center gap-2 hover:text-purple-700">
             <Search size={18} /> さがす
           </Link>
-          <Link
-            href="/events/new"
-            className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 hover:bg-purple-200"
-          >
-            <Plus size={18} /> イベント作成
-          </Link>
+          {canCreateEvent && (
+            <Link
+              href="/events/new"
+              className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 hover:bg-purple-200"
+            >
+              <Plus size={18} /> イベント作成
+            </Link>
+          )}
           {profile?.role === "admin" && (
             <Link href="/admin" className="flex items-center gap-2 hover:text-purple-700">
               <ShieldCheck size={18} /> Admin
