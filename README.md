@@ -69,8 +69,10 @@ Fill:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
 ```
+
+Use `http://localhost:3000` only when you are developing locally and `npm run dev` is running. In production/Vercel, this must be your real deployed URL or confirmation emails can redirect to localhost.
 
 ### 4. Enable Google OAuth in Supabase
 
@@ -91,7 +93,7 @@ Google Cloud OAuth redirect URL must be:
 https://YOUR_SUPABASE_PROJECT.supabase.co/auth/v1/callback
 ```
 
-For local development, Supabase handles OAuth callback, then app callback:
+Supabase handles OAuth/email callback, then redirects to the app callback:
 
 ```txt
 http://localhost:3000/auth/callback
@@ -100,11 +102,14 @@ http://localhost:3000/auth/callback
 Add this to Supabase Auth URL Configuration:
 
 ```txt
-Site URL: http://localhost:3000
+Site URL: https://your-domain.com
 Redirect URLs:
 http://localhost:3000/auth/callback
 https://your-vercel-domain.vercel.app/auth/callback
+https://your-domain.com/auth/callback
 ```
+
+If the email confirmation opens `localhost` and shows `ERR_CONNECTION_REFUSED`, change the Site URL and Redirect URLs above, update `NEXT_PUBLIC_SITE_URL`, redeploy/restart the app, then send a new confirmation email. Old emails keep the old localhost link.
 
 ### 5. Run
 

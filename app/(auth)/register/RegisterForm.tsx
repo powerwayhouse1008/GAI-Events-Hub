@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { useState } from "react";
 
 export function RegisterForm() {
@@ -17,6 +18,7 @@ export function RegisterForm() {
     const displayName = String(formData.get("display_name") || "");
     const companyName = String(formData.get("company_name") || "");
     const requestedRole = String(formData.get("requested_role") || "member");
+    const siteUrl = getSiteUrl();
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -27,7 +29,7 @@ export function RegisterForm() {
           company_name: companyName,
           requested_role: requestedRole
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+        emailRedirectTo: `${siteUrl}/auth/callback`
       }
     });
 
@@ -41,7 +43,7 @@ export function RegisterForm() {
   }
 
   async function signUpGoogleOrganizer() {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const siteUrl = getSiteUrl();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

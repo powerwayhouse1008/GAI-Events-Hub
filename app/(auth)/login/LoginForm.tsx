@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -13,7 +14,7 @@ export function LoginForm() {
 
   async function signInWithGoogle() {
     setLoading(true);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const siteUrl = getSiteUrl();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
