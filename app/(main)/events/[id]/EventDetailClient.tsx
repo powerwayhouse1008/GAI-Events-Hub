@@ -7,6 +7,7 @@ import { AnnouncementsList } from "@/components/AnnouncementsList";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentsList } from "@/components/DocumentsList";
 import { ParticipantsList } from "@/components/ParticipantsList";
+import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
 import {
   getAnnouncements,
   getEventDocuments,
@@ -147,7 +148,16 @@ export function EventDetailClient({
               </div>
 
               <div>
-                <h2 className="mb-4 text-2xl font-black">参加者</h2>
+                <h2 className="mb-4 text-2xl font-black">参加申込の管理</h2>
+                <RegistrationReviewPanel
+                  participants={participants}
+                  approvalMode={event.approval_mode}
+                  onUpdated={refreshParticipants}
+                />
+              </div>
+
+              <div>
+                <h2 className="mb-4 text-2xl font-black">参加者サマリー</h2>
                 <button
                   onClick={refreshParticipants}
                   className="mb-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white"
