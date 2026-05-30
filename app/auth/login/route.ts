@@ -1,5 +1,5 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 
 function getSafeRedirect(path: string | null) {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return "/events";
@@ -16,13 +16,50 @@ function getAuthErrorCode(message: string) {
   return "unknown";
 }
 
+function createLoginClient(request: Request) {
+  const cookiesToSet: { name: string; value: string; options: CookieOptions }[] = [];
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          const cookie = request.headers.get("cookie") || "";
+          return cookie
+            .split(";")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((item) => {
+              const [name, ...valueParts] = item.split("=");
+              return { name, value: decodeURIComponent(valueParts.join("=")) };
+            });
+        },
+        setAll(items: { name: string; value: string; options: CookieOptions }[]) {
+          cookiesToSet.push(...items);
+        }
+      }
+    }
+  );
+
+  return { supabase, cookiesToSet };
+}
+
+function redirectWithCookies(url: URL, cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+  const response = NextResponse.redirect(url, { status: 303 });
+  cookiesToSet.forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options);
+  });
+  return response;
+}
+
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url);
   const formData = await request.formData();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
   const redirectTo = getSafeRedirect(String(formData.get("redirectTo") || "/events"));
-  const supabase = await createClient();
+  const { supabase, cookiesToSet } = createLoginClient(request);
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -33,7 +70,7 @@ export async function POST(request: Request) {
     const url = new URL("/login", requestUrl.origin);
     url.searchParams.set("auth_error", getAuthErrorCode(error.message));
     url.searchParams.set("redirectTo", redirectTo);
-    return NextResponse.redirect(url, { status: 303 });
+    return redirectWithCookies(url, cookiesToSet);
   }
 
   const {
@@ -64,5 +101,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL(redirectTo, requestUrl.origin), { status: 303 });
+  return redirectWithCookies(new URL(redirectTo, requestUrl.origin), cookiesToSet);
 }
