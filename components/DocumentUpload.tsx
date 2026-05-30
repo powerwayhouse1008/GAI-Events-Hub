@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { uploadDocument } from "@/app/(main)/events/[id]/eventManagerActions";
 import { Upload, X } from "lucide-react";
 
@@ -17,21 +17,21 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Limit file size to 50MB
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        setError("ファイルサイズは50MB以下である必要があります");
-        return;
-      }
-      setFile(selectedFile);
-      setError("");
+    if (!selectedFile) return;
+
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      setError("ファイルサイズは50MB以下にしてください。");
+      return;
     }
+
+    setFile(selectedFile);
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setError("ファイルを選択してください");
+      setError("ファイルを選択してください。");
       return;
     }
 
@@ -45,7 +45,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
       setIsOpen(false);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ファイルアップロードに失敗しました");
+      setError(err instanceof Error ? err.message : "ファイルのアップロードに失敗しました。");
     } finally {
       setIsLoading(false);
     }
@@ -53,10 +53,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="btn btn-secondary gap-2"
-      >
+      <button onClick={() => setIsOpen(true)} className="btn btn-secondary gap-2" type="button">
         <Upload className="h-4 w-4" />
         ファイルをアップロード
       </button>
@@ -71,6 +68,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
           <button
             onClick={() => setIsOpen(false)}
             className="text-slate-400 hover:text-slate-600"
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -79,7 +77,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">
-              <span className="label-text font-bold">ファイルタイトル（オプション）</span>
+              <span className="label-text font-bold">ファイルタイトル（任意）</span>
             </label>
             <input
               type="text"
@@ -98,7 +96,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center hover:border-primary hover:bg-blue-50 transition-colors"
+              className="w-full rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center transition-colors hover:border-purple-400 hover:bg-purple-50"
               disabled={isLoading}
             >
               <div className="flex flex-col items-center gap-2">
@@ -106,9 +104,7 @@ export function DocumentUpload({ eventId, onSuccess }: DocumentUploadProps) {
                 <div className="text-sm font-medium text-slate-600">
                   {file ? file.name : "クリックしてファイルを選択"}
                 </div>
-                <div className="text-xs text-slate-500">
-                  最大 50MB
-                </div>
+                <div className="text-xs text-slate-500">最大 50MB</div>
               </div>
             </button>
             <input

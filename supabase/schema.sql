@@ -119,8 +119,26 @@ set search_path = public
 as $$
 declare
   requested_role text;
+  existing_profile_id uuid;
 begin
   requested_role := coalesce(new.raw_user_meta_data->>'requested_role', 'member');
+
+  -- Older data may already contain the same email on another profile row. That
+  -- blocks sign-up when profiles.email has or had a unique constraint.
+  if new.email is not null then
+    select p.id
+    into existing_profile_id
+    from public.profiles p
+    where lower(p.email) = lower(new.email)
+      and p.id <> new.id
+    limit 1;
+
+    if existing_profile_id is not null then
+      update public.profiles
+      set email = null
+      where id = existing_profile_id;
+    end if;
+  end if;
 
   insert into public.profiles (
     id,
@@ -155,6 +173,11 @@ begin
     end;
 
   return new;
+exception
+  when others then
+    -- Do not fail auth.users creation because of profile sync issues.
+    raise warning 'handle_new_user profile sync failed for user %, email %: %', new.id, new.email, sqlerrm;
+    return new;
 end;
 $$;
 

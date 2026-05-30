@@ -2,12 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Announcement, EventDocument } from "@/lib/types";
 
 // Check if user is event organizer
 async function verifyOrganizerAccess(eventId: string, userId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: event } = await supabase
     .from("events")
     .select("organizer_id")
@@ -90,16 +90,17 @@ export async function uploadDocument(
   title: string
 ) {
   const user = await requireUser();
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Verify access
   const isAuthorized = await verifyOrganizerAccess(eventId, user.id);
   if (!isAuthorized) {
-    throw new Error("Unauthorized: Only event organizer can upload documents");
+    throw new Error("このイベントの主催者だけがファイルをアップロードできます。");
   }
 
   // Upload file to storage
-  const fileName = `${eventId}/${Date.now()}-${file.name}`;
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const fileName = `${eventId}/${Date.now()}-${safeName}`;
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from("event-documents")
     .upload(fileName, file, {
@@ -107,7 +108,9 @@ export async function uploadDocument(
       upsert: false,
     });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    throw new Error(`ファイルをアップロードできませんでした。${uploadError.message}`);
+  }
 
   // Get public URL
   const { data } = supabase.storage
@@ -128,7 +131,10 @@ export async function uploadDocument(
     .select()
     .single();
 
-  if (docError) throw docError;
+  if (docError) {
+    await supabase.storage.from("event-documents").remove([uploadData.path]);
+    throw new Error(`ファイル情報を保存できませんでした。${docError.message}`);
+  }
   return docData as EventDocument;
 }
 

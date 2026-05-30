@@ -34,7 +34,10 @@ export function RegisterForm() {
     });
 
     if (error) {
-      setError("登録できませんでした。入力内容を確認してください。");
+      const message = error.message.toLowerCase().includes("database error saving new user")
+        ? "アカウント作成時にデータベースエラーが発生しました。管理者に連絡してください。"
+        : "登録できませんでした。入力内容を確認してください。";
+      setError(message);
       setLoading(false);
       return;
     }
