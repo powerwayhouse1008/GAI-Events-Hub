@@ -14,6 +14,21 @@ export async function getProfile(): Promise<Profile | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const fallbackProfile: Profile = {
+    id: user.id,
+    email: user.email || null,
+    display_name:
+      user.user_metadata?.display_name ||
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "User",
+    avatar_url: user.user_metadata?.avatar_url || null,
+    company_name: user.user_metadata?.company_name || null,
+    role: "member",
+    organizer_status: user.user_metadata?.requested_role === "organizer" ? "pending" : "none",
+    created_at: user.created_at
+  };
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
@@ -26,7 +41,7 @@ export async function getProfile(): Promise<Profile | null> {
   }
 
   if (error) {
-    return null;
+    return fallbackProfile;
   }
 
   const requestedRole = user.user_metadata?.requested_role;
@@ -48,7 +63,7 @@ export async function getProfile(): Promise<Profile | null> {
     .select("*")
     .single();
 
-  return createdProfile as Profile | null;
+  return (createdProfile as Profile | null) || fallbackProfile;
 }
 
 export async function requireUser() {

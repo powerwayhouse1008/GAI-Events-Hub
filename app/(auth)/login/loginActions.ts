@@ -15,7 +15,14 @@ function getSafeRedirect(path: string) {
   return path;
 }
 
-export async function signInEmail(formData: FormData) {
+type SignInState = {
+  error: string;
+};
+
+export async function signInEmail(
+  _prevState: SignInState,
+  formData: FormData
+): Promise<SignInState> {
   const supabase = await createClient();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
