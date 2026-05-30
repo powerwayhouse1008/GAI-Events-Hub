@@ -23,7 +23,7 @@ export default async function AdminAccountsPage() {
         </div>
         <form action={createDefaultAdmin}>
           <button className="rounded-xl bg-purple-700 px-5 py-3 font-bold text-white hover:bg-purple-800">
-            Create info@powerway.jp Admin
+            Create mai@powerway.jp Admin
           </button>
         </form>
       </div>

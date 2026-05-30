@@ -19,6 +19,24 @@ type SignInState = {
   error: string;
 };
 
+function getJapaneseAuthError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("invalid login credentials")) {
+    return "メールアドレスまたはパスワードが正しくありません。";
+  }
+
+  if (normalized.includes("email not confirmed")) {
+    return "メール認証が完了していません。確認メールを開いて認証してください。";
+  }
+
+  if (normalized.includes("too many")) {
+    return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
+  }
+
+  return `ログインできませんでした。${message}`;
+}
+
 export async function signInEmail(
   _prevState: SignInState,
   formData: FormData
@@ -34,7 +52,7 @@ export async function signInEmail(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: getJapaneseAuthError(error.message) };
   }
 
   const {

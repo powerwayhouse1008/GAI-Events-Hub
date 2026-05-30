@@ -37,7 +37,7 @@ export async function revokeAdmin(formData: FormData) {
 export async function createDefaultAdmin() {
   await requireAdmin();
   const supabase = createAdminClient();
-  const email = "info@powerway.jp";
+  const email = "mai@powerway.jp";
   const password = "Dao123123";
 
   const { data: existingProfile } = await supabase
@@ -69,7 +69,7 @@ export async function createDefaultAdmin() {
   await supabase.from("profiles").upsert({
     id: userId,
     email,
-    display_name: "Powerway Admin",
+    display_name: "MAI",
     role: "admin",
     organizer_status: "approved"
   });
