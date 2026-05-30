@@ -18,7 +18,7 @@ export default function LoginPage() {
       <section className="my-auto rounded-[32px] border border-purple-100 bg-white/80 p-8 shadow-2xl backdrop-blur-xl">
         <h2 className="text-3xl font-black">ログイン</h2>
         <p className="mt-2 text-slate-500">Googleまたはメールでログインできます。</p>
-        <Suspense fallback={<div className="mt-6 text-center text-slate-500">Loading...</div>}>
+        <Suspense fallback={<div className="mt-6 text-center text-slate-500">読み込み中...</div>}>
           <LoginForm />
         </Suspense>
         <p className="mt-6 text-center text-slate-600">

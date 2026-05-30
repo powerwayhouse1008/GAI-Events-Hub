@@ -58,11 +58,11 @@ export function LoginForm() {
       <form action={formAction} className="grid gap-4">
         <input type="hidden" name="redirectTo" value={redirectTo} />
         <label className="label">
-          Email
+          メールアドレス
           <input className="input mt-2" name="email" type="email" required />
         </label>
         <label className="label">
-          Password
+          パスワード
           <input className="input mt-2" name="password" type="password" required />
         </label>
         {state.error && (

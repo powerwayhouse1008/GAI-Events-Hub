@@ -34,7 +34,7 @@ export function RegisterForm() {
     });
 
     if (error) {
-      setError(error.message);
+      setError("登録できませんでした。入力内容を確認してください。");
       setLoading(false);
       return;
     }
@@ -69,19 +69,21 @@ export function RegisterForm() {
       </div>
 
       <form action={signUp} className="grid gap-4">
-        <label className="label">Name<input className="input mt-2" name="display_name" required /></label>
-        <label className="label">Email<input className="input mt-2" name="email" type="email" required /></label>
-        <label className="label">Password<input className="input mt-2" name="password" type="password" minLength={6} required /></label>
-        <label className="label">Company / Community<input className="input mt-2" name="company_name" /></label>
+        <label className="label">名前<input className="input mt-2" name="display_name" required /></label>
+        <label className="label">メールアドレス<input className="input mt-2" name="email" type="email" required /></label>
+        <label className="label">パスワード<input className="input mt-2" name="password" type="password" minLength={6} required /></label>
+        <label className="label">会社・コミュニティ<input className="input mt-2" name="company_name" /></label>
         <label className="label">
-          Account Type
+          アカウント種別
           <select className="input mt-2" name="requested_role">
             <option value="member">Member / 参加者</option>
             <option value="organizer">Organizer / 主催者申請</option>
           </select>
         </label>
         {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
-        <button disabled={loading} className="btn btn-primary w-full" type="submit">アカウント作成</button>
+        <button disabled={loading} className="btn btn-primary w-full" type="submit">
+          {loading ? "作成中..." : "アカウント作成"}
+        </button>
       </form>
     </div>
   );
