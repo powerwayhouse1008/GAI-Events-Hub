@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { RegisterForm } from "./RegisterForm";
 
@@ -10,15 +11,17 @@ export default function RegisterPage() {
         </div>
         <h1 className="mt-8 text-5xl font-black tracking-tight md:text-7xl">アカウント作成</h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          Memberはイベント申込、Organizerは管理者承認後にイベント作成ができます。
+          Memberはイベント参加用、Organizerは管理者承認後にイベント作成を利用できます。
         </p>
       </section>
 
       <section className="my-auto rounded-[32px] border border-purple-100 bg-white/80 p-8 shadow-2xl backdrop-blur-xl">
         <h2 className="text-3xl font-black">新規登録</h2>
-        <RegisterForm />
+        <Suspense fallback={<div className="mt-6 text-center text-slate-500">読み込み中...</div>}>
+          <RegisterForm />
+        </Suspense>
         <p className="mt-6 text-center text-slate-600">
-          すでにアカウントがあります{" "}
+          すでにアカウントがありますか{" "}
           <Link href="/login" className="font-black text-purple-700">
             ログイン
           </Link>

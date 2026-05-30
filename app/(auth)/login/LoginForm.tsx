@@ -1,7 +1,5 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-import { getSiteUrl } from "@/lib/site-url";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
@@ -16,27 +14,29 @@ function EmailLoginButton() {
 
   return (
     <button disabled={pending} className="btn btn-primary w-full" type="submit">
-      ログイン
+      {pending ? "ログイン中..." : "ログイン"}
     </button>
   );
 }
 
+function getOAuthMessage(error: string | null) {
+  if (error === "google_not_enabled") {
+    return "Googleログインはまだ有効になっていません。SupabaseのAuthentication ProvidersでGoogleを有効にしてください。";
+  }
+
+  return "";
+}
+
 export function LoginForm() {
-  const supabase = createClient();
   const params = useSearchParams();
   const redirectTo = params.get("redirectTo") || "/events";
+  const oauthMessage = getOAuthMessage(params.get("oauth_error"));
   const [googleLoading, setGoogleLoading] = useState(false);
   const [state, formAction] = useActionState(signInEmail, initialState);
 
-  async function signInWithGoogle() {
+  function signInWithGoogle() {
     setGoogleLoading(true);
-    const siteUrl = getSiteUrl();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(redirectTo)}`
-      }
-    });
+    window.location.href = `/auth/google?mode=login&next=${encodeURIComponent(redirectTo)}`;
   }
 
   return (
@@ -44,10 +44,17 @@ export function LoginForm() {
       <button
         onClick={signInWithGoogle}
         disabled={googleLoading}
-        className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-4 font-black hover:bg-slate-50"
+        type="button"
+        className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-4 font-black hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Googleでログイン
+        {googleLoading ? "Googleへ移動中..." : "Googleでログイン"}
       </button>
+
+      {(oauthMessage || state.error) && (
+        <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
+          {oauthMessage || state.error}
+        </p>
+      )}
 
       <div className="my-6 flex items-center gap-3 text-sm text-slate-400">
         <div className="h-px flex-1 bg-slate-200" />
@@ -65,11 +72,6 @@ export function LoginForm() {
           パスワード
           <input className="input mt-2" name="password" type="password" required />
         </label>
-        {state.error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-            {state.error}
-          </p>
-        )}
         <EmailLoginButton />
       </form>
     </div>

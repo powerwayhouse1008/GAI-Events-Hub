@@ -11,7 +11,7 @@ export default function LoginPage() {
         </div>
         <h1 className="mt-8 text-5xl font-black tracking-tight md:text-7xl">Global AI Industry Alliance</h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          AI業界イベント、コミュニティ、カレンダー、主催者管理を1つのプラットフォームで。
+          AI業界イベント、コミュニティ、カレンダー、主催者管理をひとつのプラットフォームで。
         </p>
       </section>
 
