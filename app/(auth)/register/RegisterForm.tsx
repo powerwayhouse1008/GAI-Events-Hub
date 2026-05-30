@@ -9,6 +9,14 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function requestOrganizerReview(email: string, displayName: string, companyName: string) {
+    await fetch("/auth/request-organizer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, displayName, companyName })
+    });
+  }
+
   async function signUp(formData: FormData) {
     setLoading(true);
     setError("");
@@ -29,17 +37,22 @@ export function RegisterForm() {
           company_name: companyName,
           requested_role: requestedRole
         },
-        emailRedirectTo: `${siteUrl}/auth/callback`
+        emailRedirectTo: `${siteUrl}/auth/callback?requested_role=${requestedRole}`
       }
     });
 
     if (error) {
-      const message = error.message.toLowerCase().includes("database error saving new user")
-        ? "アカウント作成時にデータベースエラーが発生しました。管理者に連絡してください。"
-        : "登録できませんでした。入力内容を確認してください。";
-      setError(message);
+      setError(
+        error.message.toLowerCase().includes("database error saving new user")
+          ? "アカウント作成時にデータベースエラーが発生しました。管理者に連絡してください。"
+          : "登録できませんでした。入力内容を確認してください。"
+      );
       setLoading(false);
       return;
+    }
+
+    if (requestedRole === "organizer") {
+      await requestOrganizerReview(email, displayName, companyName);
     }
 
     window.location.href = requestedRole === "organizer" ? "/organizer-pending" : "/events";
