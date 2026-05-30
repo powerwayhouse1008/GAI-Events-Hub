@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-function getSafePath(path: string | null, fallback = "/events") {
+function getSafePath(path: string | null, fallback = "/me") {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return fallback;
+  if (path === "/" || path.startsWith("/login") || path.startsWith("/register")) return fallback;
   return path;
 }
 

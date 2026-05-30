@@ -5,11 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 
 function getSafeRedirect(path: string) {
   if (!path.startsWith("/") || path.startsWith("//")) {
-    return "/events";
+    return "/me";
   }
 
-  if (path.startsWith("/login")) {
-    return "/events";
+  if (path === "/" || path.startsWith("/login") || path.startsWith("/register")) {
+    return "/me";
   }
 
   return path;
@@ -44,7 +44,7 @@ export async function signInEmail(
   const supabase = await createClient();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
-  const redirectTo = getSafeRedirect(String(formData.get("redirectTo") || "/events"));
+  const redirectTo = getSafeRedirect(String(formData.get("redirectTo") || "/me"));
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -77,8 +77,8 @@ export async function signInEmail(
           "User",
         avatar_url: user.user_metadata?.avatar_url || null,
         company_name: user.user_metadata?.company_name || null,
-        role: "member",
-        organizer_status: "none"
+        role: user.user_metadata?.requested_role === "organizer" ? "organizer" : "member",
+        organizer_status: user.user_metadata?.requested_role === "organizer" ? "approved" : "none"
       });
     }
   }

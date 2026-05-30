@@ -29,7 +29,7 @@ function getOAuthMessage(error: string | null) {
 
 export function LoginForm() {
   const params = useSearchParams();
-  const redirectTo = params.get("redirectTo") || "/events";
+  const redirectTo = params.get("redirectTo") || "/me";
   const oauthMessage = getOAuthMessage(params.get("oauth_error"));
   const [googleLoading, setGoogleLoading] = useState(false);
   const [state, formAction] = useActionState(signInEmail, initialState);
