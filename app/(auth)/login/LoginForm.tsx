@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 function getSafeRedirect(path: string | null) {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return "/events";
@@ -18,57 +17,28 @@ function getOAuthMessage(error: string | null) {
   return "";
 }
 
-function getJapaneseAuthError(message: string) {
-  const normalized = message.toLowerCase();
-
-  if (normalized.includes("invalid login credentials")) {
-    return "メールアドレスまたはパスワードが正しくありません。";
-  }
-
-  if (normalized.includes("email not confirmed")) {
+function getEmailMessage(error: string | null) {
+  if (error === "invalid") return "メールアドレスまたはパスワードが正しくありません。";
+  if (error === "email_not_confirmed") {
     return "メール認証が完了していません。確認メールを開いて認証してください。";
   }
-
-  if (normalized.includes("too many")) {
+  if (error === "too_many") {
     return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
   }
-
-  return `ログインできませんでした。${message}`;
+  if (error === "unknown") return "ログインできませんでした。入力内容を確認してください。";
+  return "";
 }
 
 export function LoginForm() {
-  const supabase = createClient();
   const params = useSearchParams();
   const redirectTo = getSafeRedirect(params.get("redirectTo"));
-  const oauthMessage = getOAuthMessage(params.get("oauth_error"));
+  const message = getOAuthMessage(params.get("oauth_error")) || getEmailMessage(params.get("auth_error"));
   const [googleLoading, setGoogleLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
-  const [error, setError] = useState(oauthMessage);
 
   function signInWithGoogle() {
     setGoogleLoading(true);
     window.location.href = `/auth/google?mode=login&next=${encodeURIComponent(redirectTo)}`;
-  }
-
-  async function signInWithEmail(formData: FormData) {
-    setEmailLoading(true);
-    setError("");
-
-    const email = String(formData.get("email") || "");
-    const password = String(formData.get("password") || "");
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      setError(getJapaneseAuthError(error.message));
-      setEmailLoading(false);
-      return;
-    }
-
-    window.location.href = redirectTo;
   }
 
   return (
@@ -82,9 +52,9 @@ export function LoginForm() {
         {googleLoading ? "Googleへ移動中..." : "Googleでログイン"}
       </button>
 
-      {error && (
+      {message && (
         <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-          {error}
+          {message}
         </p>
       )}
 
@@ -94,7 +64,13 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <form action={signInWithEmail} className="grid gap-4">
+      <form
+        action="/auth/login"
+        method="post"
+        className="grid gap-4"
+        onSubmit={() => setEmailLoading(true)}
+      >
+        <input type="hidden" name="redirectTo" value={redirectTo} />
         <label className="label">
           メールアドレス
           <input className="input mt-2" name="email" type="email" required />
