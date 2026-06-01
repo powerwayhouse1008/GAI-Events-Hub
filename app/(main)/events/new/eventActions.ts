@@ -2,6 +2,7 @@
 
 import { requireOrganizer } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyEventParticipants } from "@/lib/event-notifications";
 import type { Profile } from "@/lib/types";
 
 type SaveEventInput = {
@@ -113,6 +114,16 @@ export async function saveEvent(input: SaveEventInput) {
 
   if (error) {
     return { error: `イベントを保存できませんでした。${error.message}` };
+  }
+
+  if (input.eventId) {
+    await notifyEventParticipants({
+      eventId: input.eventId,
+      actorId: profile.id,
+      type: "event_update",
+      title: input.title,
+      message: "イベント情報が更新されました。"
+    });
   }
 
   return { id: data.id as string };

@@ -11,6 +11,7 @@ export type Profile = {
   company_name: string | null;
   role: UserRole;
   organizer_status: ApprovalStatus;
+  deleted_at?: string | null;
   created_at: string;
 };
 
@@ -63,5 +64,53 @@ export type EventDocument = {
   file_url: string;
   file_type: string | null;
   file_size: number | null;
+  created_at: string;
+};
+
+export type EventNotification = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  actor_id: string | null;
+  type: "announcement" | "document" | "event_update";
+  title: string;
+  message: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type EventVote = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  value: -1 | 1;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventComment = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  content: string;
+  hidden: boolean;
+  hidden_by: string | null;
+  hidden_at: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    display_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+    company_name: string | null;
+  } | null;
+};
+
+export type EventCommentRestriction = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  restricted_by: string | null;
+  reason: string | null;
   created_at: string;
 };

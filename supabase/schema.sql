@@ -70,6 +70,50 @@ create table if not exists public.event_documents (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.event_notifications (
+  id uuid primary key default uuid_generate_v4(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  actor_id uuid references public.profiles(id) on delete set null,
+  type text not null check (type in ('announcement','document','event_update')),
+  title text not null,
+  message text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.event_votes (
+  id uuid primary key default uuid_generate_v4(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  value integer not null check (value in (-1, 1)),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(event_id, user_id)
+);
+
+create table if not exists public.event_comments (
+  id uuid primary key default uuid_generate_v4(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  content text not null,
+  hidden boolean not null default false,
+  hidden_by uuid references public.profiles(id) on delete set null,
+  hidden_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.event_comment_restrictions (
+  id uuid primary key default uuid_generate_v4(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  restricted_by uuid references public.profiles(id) on delete set null,
+  reason text,
+  created_at timestamptz not null default now(),
+  unique(event_id, user_id)
+);
+
 -- Add columns/checks when this file is run over an older schema.
 alter table public.profiles
   add column if not exists email text,
@@ -78,6 +122,7 @@ alter table public.profiles
   add column if not exists company_name text,
   add column if not exists role text not null default 'member',
   add column if not exists organizer_status text not null default 'none',
+  add column if not exists deleted_at timestamptz,
   add column if not exists created_at timestamptz not null default now();
 
 alter table public.profiles
@@ -111,6 +156,12 @@ alter table public.events
 alter table public.announcements
   add column if not exists updated_at timestamptz not null default now();
 
+alter table public.event_comments
+  add column if not exists hidden boolean not null default false,
+  add column if not exists hidden_by uuid references public.profiles(id) on delete set null,
+  add column if not exists hidden_at timestamptz,
+  add column if not exists updated_at timestamptz not null default now();
+
 -- Helpful indexes for lists/detail dashboards.
 create index if not exists events_status_starts_at_idx on public.events (status, starts_at);
 create index if not exists events_featured_starts_at_idx on public.events (featured, starts_at);
@@ -119,6 +170,11 @@ create index if not exists registrations_event_created_at_idx on public.registra
 create index if not exists registrations_user_created_at_idx on public.registrations (user_id, created_at desc);
 create index if not exists announcements_event_created_at_idx on public.announcements (event_id, created_at desc);
 create index if not exists event_documents_event_created_at_idx on public.event_documents (event_id, created_at desc);
+create index if not exists event_notifications_user_created_at_idx on public.event_notifications (user_id, created_at desc);
+create index if not exists event_notifications_event_created_at_idx on public.event_notifications (event_id, created_at desc);
+create index if not exists event_votes_event_value_idx on public.event_votes (event_id, value);
+create index if not exists event_comments_event_created_at_idx on public.event_comments (event_id, created_at desc);
+create index if not exists event_comment_restrictions_event_user_idx on public.event_comment_restrictions (event_id, user_id);
 
 -- -----------------------------------------------------------------------------
 -- Functions and triggers
@@ -276,6 +332,16 @@ create trigger announcements_touch_updated_at
 before update on public.announcements
 for each row execute procedure public.touch_updated_at();
 
+drop trigger if exists event_votes_touch_updated_at on public.event_votes;
+create trigger event_votes_touch_updated_at
+before update on public.event_votes
+for each row execute procedure public.touch_updated_at();
+
+drop trigger if exists event_comments_touch_updated_at on public.event_comments;
+create trigger event_comments_touch_updated_at
+before update on public.event_comments
+for each row execute procedure public.touch_updated_at();
+
 -- Stop normal users from changing their own role/approval status via the profile form.
 create or replace function public.prevent_profile_privilege_escalation()
 returns trigger
@@ -320,6 +386,10 @@ alter table public.events enable row level security;
 alter table public.registrations enable row level security;
 alter table public.announcements enable row level security;
 alter table public.event_documents enable row level security;
+alter table public.event_notifications enable row level security;
+alter table public.event_votes enable row level security;
+alter table public.event_comments enable row level security;
+alter table public.event_comment_restrictions enable row level security;
 
 -- Profiles
 -- Members can read themselves. Admins can read everyone. Event organizers can read
@@ -456,6 +526,114 @@ using (
   or public.is_event_participant(event_id, auth.uid())
 );
 
+-- Notifications
+drop policy if exists "notifications read own organizer admin" on public.event_notifications;
+create policy "notifications read own organizer admin"
+on public.event_notifications for select
+to authenticated
+using (
+  user_id = auth.uid()
+  or public.is_admin(auth.uid())
+  or public.is_event_organizer(event_id, auth.uid())
+);
+
+drop policy if exists "notifications update own" on public.event_notifications;
+create policy "notifications update own"
+on public.event_notifications for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+-- Event votes
+drop policy if exists "votes read participants organizers admin" on public.event_votes;
+create policy "votes read participants organizers admin"
+on public.event_votes for select
+to authenticated
+using (
+  public.is_event_participant(event_id, auth.uid())
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+);
+
+drop policy if exists "participants vote events" on public.event_votes;
+create policy "participants vote events"
+on public.event_votes for insert
+to authenticated
+with check (user_id = auth.uid() and public.is_event_participant(event_id, auth.uid()));
+
+drop policy if exists "participants update own votes" on public.event_votes;
+create policy "participants update own votes"
+on public.event_votes for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "participants delete own votes" on public.event_votes;
+create policy "participants delete own votes"
+on public.event_votes for delete
+to authenticated
+using (user_id = auth.uid());
+
+-- Event comments
+drop policy if exists "comments read participants organizers admin" on public.event_comments;
+create policy "comments read participants organizers admin"
+on public.event_comments for select
+to authenticated
+using (
+  public.is_event_participant(event_id, auth.uid())
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+);
+
+drop policy if exists "participants create comments" on public.event_comments;
+create policy "participants create comments"
+on public.event_comments for insert
+to authenticated
+with check (user_id = auth.uid() and public.is_event_participant(event_id, auth.uid()));
+
+drop policy if exists "comment owners organizers update comments" on public.event_comments;
+create policy "comment owners organizers update comments"
+on public.event_comments for update
+to authenticated
+using (
+  user_id = auth.uid()
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+)
+with check (
+  user_id = auth.uid()
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+);
+
+drop policy if exists "comment owners organizers delete comments" on public.event_comments;
+create policy "comment owners organizers delete comments"
+on public.event_comments for delete
+to authenticated
+using (
+  user_id = auth.uid()
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+);
+
+-- Event comment restrictions
+drop policy if exists "restrictions read participants organizers admin" on public.event_comment_restrictions;
+create policy "restrictions read participants organizers admin"
+on public.event_comment_restrictions for select
+to authenticated
+using (
+  user_id = auth.uid()
+  or public.is_event_organizer(event_id, auth.uid())
+  or public.is_admin(auth.uid())
+);
+
+drop policy if exists "organizers manage comment restrictions" on public.event_comment_restrictions;
+create policy "organizers manage comment restrictions"
+on public.event_comment_restrictions for all
+to authenticated
+using (public.is_event_organizer(event_id, auth.uid()) or public.is_admin(auth.uid()))
+with check (public.is_event_organizer(event_id, auth.uid()) or public.is_admin(auth.uid()));
+
 drop policy if exists "organizers upload documents" on public.event_documents;
 create policy "organizers upload documents"
 on public.event_documents for insert
@@ -547,6 +725,10 @@ grant select, insert, update, delete on public.events to authenticated;
 grant select, insert, update, delete on public.registrations to authenticated;
 grant select, insert, update, delete on public.announcements to authenticated;
 grant select, insert, update, delete on public.event_documents to authenticated;
+grant select, insert, update, delete on public.event_notifications to authenticated;
+grant select, insert, update, delete on public.event_votes to authenticated;
+grant select, insert, update, delete on public.event_comments to authenticated;
+grant select, insert, update, delete on public.event_comment_restrictions to authenticated;
 grant execute on function public.is_admin(uuid) to anon, authenticated;
 grant execute on function public.is_approved_organizer(uuid) to anon, authenticated;
 grant execute on function public.is_event_organizer(uuid, uuid) to anon, authenticated;

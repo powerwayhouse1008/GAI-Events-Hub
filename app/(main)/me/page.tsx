@@ -11,12 +11,45 @@ export default async function MePage() {
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
 
+  const { data: notifications = [] } = await supabase
+    .from("event_notifications")
+    .select("*, events(title)")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
       <h1 className="text-5xl font-black tracking-tight">My Page</h1>
       <section className="card mt-8 p-7">
         <h2 className="text-2xl font-black">{profile.display_name || profile.email}</h2>
         <p className="mt-2 text-slate-500">Role: {profile.role} / Organizer: {profile.organizer_status}</p>
+      </section>
+
+      <section className="card mt-8 p-7">
+        <h2 className="text-3xl font-black">Notifications</h2>
+        <div className="mt-5 grid gap-3">
+          {(notifications as any[]).map((notification) => (
+            <a
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-purple-200 hover:bg-purple-50"
+              href={`/events/${notification.event_id}`}
+              key={notification.id}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-black text-slate-950">{notification.title}</p>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">
+                  {notification.type}
+                </span>
+              </div>
+              <p className="mt-1 text-sm font-bold text-slate-500">{notification.events?.title}</p>
+              {notification.message && <p className="mt-2 text-sm text-slate-600">{notification.message}</p>}
+              <p className="mt-2 text-xs font-bold text-slate-400">
+                {new Date(notification.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+              </p>
+            </a>
+          ))}
+          {!notifications?.length && <p className="text-slate-500">No notifications.</p>}
+        </div>
       </section>
 
       <section className="card mt-8 overflow-x-auto p-7">

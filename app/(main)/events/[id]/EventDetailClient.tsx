@@ -16,7 +16,10 @@ import {
   MapPin,
   MessageSquare,
   Sparkles,
+  ThumbsDown,
+  ThumbsUp,
   Ticket,
+  Trash2,
   Users
 } from "lucide-react";
 import { AnnouncementForm } from "@/components/AnnouncementForm";
@@ -25,9 +28,20 @@ import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentsList } from "@/components/DocumentsList";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
-import { getAnnouncements, getEventDocuments, getEventParticipants } from "./eventManagerActions";
+import {
+  createEventComment,
+  deleteEventComment,
+  getAnnouncements,
+  getEventDocuments,
+  getEventEngagement,
+  getEventParticipants,
+  hideEventComment,
+  restrictEventCommenter,
+  setEventVote,
+  unrestrictEventCommenter
+} from "./eventManagerActions";
 import type { RegisterEventResult } from "./registerEvent";
-import type { Announcement, Event, EventDocument, Profile } from "@/lib/types";
+import type { Announcement, Event, EventComment, EventDocument, Profile } from "@/lib/types";
 
 interface EventDetailClientProps {
   event: Event;
@@ -36,6 +50,14 @@ interface EventDetailClientProps {
   announcements: Announcement[];
   documents: EventDocument[];
   participants: any[];
+  engagement: {
+    likes: number;
+    dislikes: number;
+    myVote: 1 | -1 | null;
+    comments: EventComment[];
+    restrictedUserIds: string[];
+    myCommentRestricted: boolean;
+  };
   registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
 }
 
@@ -174,11 +196,13 @@ export function EventDetailClient({
   announcements: initialAnnouncements,
   documents: initialDocuments,
   participants: initialParticipants,
+  engagement: initialEngagement,
   registerEventAction
 }: EventDetailClientProps) {
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [documents, setDocuments] = useState(initialDocuments);
   const [participants, setParticipants] = useState(initialParticipants);
+  const [engagement, setEngagement] = useState(initialEngagement);
   const [showManualMessage, setShowManualMessage] = useState(false);
   const theme = getTheme(event);
   const isManualReview = event.approval_mode === "manual";
@@ -187,6 +211,7 @@ export function EventDetailClient({
   const refreshAnnouncements = async () => setAnnouncements(await getAnnouncements(event.id));
   const refreshDocuments = async () => setDocuments(await getEventDocuments(event.id));
   const refreshParticipants = async () => setParticipants(await getEventParticipants(event.id));
+  const refreshEngagement = async () => setEngagement(await getEventEngagement(event.id));
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#061319] text-white">
@@ -214,6 +239,14 @@ export function EventDetailClient({
                 <div className="min-w-0">
                   <ParticipantTimeline announcements={announcements} theme={theme} />
                   <ParticipantDocuments documents={documents} theme={theme} />
+                  <EventEngagementPanel
+                    eventId={event.id}
+                    profile={profile}
+                    isOrganizer={isOrganizer}
+                    engagement={engagement}
+                    onUpdated={refreshEngagement}
+                    theme={theme}
+                  />
                 </div>
 
                 <aside className={`h-fit rounded-[8px] border ${theme.border} bg-white/[0.08] p-6 shadow-2xl ${theme.glow} backdrop-blur`}>
@@ -450,6 +483,183 @@ function DocumentMedia({ doc }: { doc: EventDocument }) {
       <FileKindIcon fileType={doc.file_type} />
       ブラウザで開く
     </a>
+  );
+}
+
+function EventEngagementPanel({
+  eventId,
+  profile,
+  isOrganizer,
+  engagement,
+  onUpdated,
+  theme
+}: {
+  eventId: string;
+  profile: Profile | null;
+  isOrganizer: boolean;
+  engagement: {
+    likes: number;
+    dislikes: number;
+    myVote: 1 | -1 | null;
+    comments: EventComment[];
+    restrictedUserIds: string[];
+    myCommentRestricted: boolean;
+  };
+  onUpdated: () => Promise<void>;
+  theme: ReturnType<typeof getTheme>;
+}) {
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function vote(value: 1 | -1) {
+    setBusy(`vote-${value}`);
+    setNotice(null);
+    const result = await setEventVote(eventId, value);
+    if (!result.ok) setNotice(result.message || "操作に失敗しました。");
+    await onUpdated();
+    setBusy(null);
+  }
+
+  async function submitComment() {
+    setBusy("comment");
+    setNotice(null);
+    const result = await createEventComment(eventId, comment);
+    if (result.ok) setComment("");
+    else setNotice(result.message || "コメントできませんでした。");
+    await onUpdated();
+    setBusy(null);
+  }
+
+  async function runModeration(action: string, task: () => Promise<{ ok: boolean; message?: string }>) {
+    setBusy(action);
+    setNotice(null);
+    const result = await task();
+    if (!result.ok) setNotice(result.message || "操作に失敗しました。");
+    await onUpdated();
+    setBusy(null);
+  }
+
+  return (
+    <section className="mt-10 rounded-[8px] border border-white/15 bg-white/[0.06] p-5 shadow-xl backdrop-blur">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-3xl font-black">リアクション・コメント</h2>
+        <div className="flex gap-2">
+          <button
+            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
+              engagement.myVote === 1 ? "bg-emerald-400/25 text-emerald-100" : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+            disabled={!profile || busy === "vote-1"}
+            onClick={() => vote(1)}
+            type="button"
+          >
+            <ThumbsUp className="h-4 w-4" />
+            {engagement.likes}
+          </button>
+          <button
+            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
+              engagement.myVote === -1 ? "bg-rose-400/25 text-rose-100" : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+            disabled={!profile || busy === "vote--1"}
+            onClick={() => vote(-1)}
+            type="button"
+          >
+            <ThumbsDown className="h-4 w-4" />
+            {engagement.dislikes}
+          </button>
+        </div>
+      </div>
+
+      {notice && <div className="mt-4 rounded-[8px] border border-amber-300/30 bg-amber-300/15 p-3 text-sm font-bold text-amber-100">{notice}</div>}
+
+      {profile && !isOrganizer && !engagement.myCommentRestricted && (
+        <div className="mt-5 grid gap-3">
+          <textarea
+            className="min-h-28 resize-y rounded-[8px] border border-white/15 bg-black/20 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="コメントを書く"
+            value={comment}
+          />
+          <button
+            className={`w-fit rounded-full border ${theme.border} bg-white/15 px-5 py-3 text-sm font-black text-white transition hover:bg-white/25 disabled:cursor-wait disabled:opacity-70`}
+            disabled={busy === "comment"}
+            onClick={submitComment}
+            type="button"
+          >
+            {busy === "comment" ? "送信中..." : "コメント投稿"}
+          </button>
+        </div>
+      )}
+
+      {profile && engagement.myCommentRestricted && (
+        <div className="mt-5 rounded-[8px] border border-red-300/30 bg-red-300/15 p-3 text-sm font-bold text-red-100">
+          このイベントではコメント権限が制限されています。
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-3">
+        {engagement.comments.map((item) => {
+          const restricted = engagement.restrictedUserIds.includes(item.user_id);
+          const name = item.profiles?.display_name || item.profiles?.email || "User";
+          return (
+            <article key={item.id} className="rounded-[8px] border border-white/10 bg-black/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-black text-white">{name}</p>
+                  <p className="text-xs font-bold text-slate-400">
+                    {new Date(item.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+                  </p>
+                </div>
+                {isOrganizer && (
+                  <div className="flex flex-wrap gap-2">
+                    {!item.hidden && (
+                      <button
+                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-black text-white hover:bg-white/20"
+                        disabled={busy === `hide-${item.id}`}
+                        onClick={() => runModeration(`hide-${item.id}`, () => hideEventComment(item.id, eventId))}
+                        type="button"
+                      >
+                        非表示
+                      </button>
+                    )}
+                    <button
+                      className="rounded-full bg-red-500/20 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-500/30"
+                      disabled={busy === `delete-${item.id}`}
+                      onClick={() => runModeration(`delete-${item.id}`, () => deleteEventComment(item.id, eventId))}
+                      type="button"
+                    >
+                      <Trash2 className="inline h-3.5 w-3.5" /> 削除
+                    </button>
+                    <button
+                      className="rounded-full bg-amber-400/20 px-3 py-2 text-xs font-black text-amber-100 hover:bg-amber-400/30"
+                      disabled={busy === `restrict-${item.user_id}`}
+                      onClick={() =>
+                        runModeration(`restrict-${item.user_id}`, () =>
+                          restricted
+                            ? unrestrictEventCommenter(eventId, item.user_id)
+                            : restrictEventCommenter(eventId, item.user_id)
+                        )
+                      }
+                      type="button"
+                    >
+                      {restricted ? "制限解除" : "コメント制限"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className={`mt-3 whitespace-pre-wrap leading-7 ${item.hidden ? "text-slate-500 line-through" : "text-slate-200"}`}>
+                {item.hidden ? "このコメントは非表示です。" : item.content}
+              </p>
+            </article>
+          );
+        })}
+        {!engagement.comments.length && (
+          <div className="rounded-[8px] border border-white/10 bg-black/20 p-4 text-sm font-bold text-slate-400">
+            まだコメントはありません。
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

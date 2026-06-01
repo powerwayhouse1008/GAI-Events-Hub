@@ -23,6 +23,10 @@ export type AccountActionResult = {
   deletedId?: string;
 };
 
+function isForeignKeyError(error: { code?: string; message?: string } | null) {
+  return error?.code === "23503" || Boolean(error?.message?.includes("violates foreign key constraint"));
+}
+
 async function findAuthUserByEmail(email: string) {
   const supabase = createAdminClient();
   let page = 1;
@@ -184,10 +188,36 @@ export async function deleteAccount(formData: FormData) {
   }
 
   const { error: profileError } = await supabase.from("profiles").delete().eq("id", id);
-  if (profileError) return { ok: false, message: profileError.message } satisfies AccountActionResult;
+  if (profileError) {
+    if (!isForeignKeyError(profileError)) {
+      return { ok: false, message: profileError.message } satisfies AccountActionResult;
+    }
+
+    const { error: anonymizeError } = await supabase
+      .from("profiles")
+      .update({
+        email: null,
+        display_name: "Deleted account",
+        avatar_url: null,
+        company_name: null,
+        role: "member",
+        organizer_status: "none",
+        deleted_at: new Date().toISOString()
+      })
+      .eq("id", id);
+
+    if (anonymizeError) {
+      return { ok: false, message: anonymizeError.message } satisfies AccountActionResult;
+    }
+
+    refreshAdminPages();
+    return { ok: true, deletedId: id } satisfies AccountActionResult;
+  }
 
   const { error: authError } = await supabase.auth.admin.deleteUser(id);
-  if (authError) return { ok: false, message: authError.message } satisfies AccountActionResult;
+  if (authError && !isForeignKeyError(authError)) {
+    return { ok: false, message: authError.message } satisfies AccountActionResult;
+  }
 
   refreshAdminPages();
   return { ok: true, deletedId: id } satisfies AccountActionResult;

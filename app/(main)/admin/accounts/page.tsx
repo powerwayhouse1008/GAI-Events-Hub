@@ -27,6 +27,7 @@ function toAccountRows(profiles: Profile[], authUsers: Awaited<ReturnType<typeof
 
   for (const user of authUsers) {
     const profile = profileById.get(user.id);
+    if (profile?.deleted_at) continue;
     const isOrganizer = user.user_metadata?.requested_role === "organizer";
 
     rows.set(user.id, {
@@ -45,6 +46,7 @@ function toAccountRows(profiles: Profile[], authUsers: Awaited<ReturnType<typeof
   }
 
   for (const profile of profiles) {
+    if (profile.deleted_at) continue;
     if (!rows.has(profile.id)) {
       rows.set(profile.id, {
         id: profile.id,
