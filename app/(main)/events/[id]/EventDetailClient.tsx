@@ -2,7 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, Edit3, MapPin, Sparkles, Ticket, Users } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Download,
+  Edit3,
+  ExternalLink,
+  File,
+  FileText,
+  Image as ImageIcon,
+  MapPin,
+  Sparkles,
+  Ticket,
+  Users
+} from "lucide-react";
 import { AnnouncementForm } from "@/components/AnnouncementForm";
 import { AnnouncementsList } from "@/components/AnnouncementsList";
 import { DocumentUpload } from "@/components/DocumentUpload";
@@ -43,42 +58,42 @@ const themeStyles: Record<
 > = {
   purple: {
     border: "border-violet-400/40",
-    badge: "text-violet-300",
+    badge: "text-violet-200",
     glow: "shadow-violet-500/20",
     gradient: "from-violet-600 to-fuchsia-500",
-    soft: "from-violet-500/18 to-fuchsia-500/10",
+    soft: "from-violet-500/16 to-fuchsia-500/8",
     ring: "ring-violet-400/30"
   },
   blue: {
     border: "border-cyan-400/40",
-    badge: "text-cyan-300",
+    badge: "text-cyan-200",
     glow: "shadow-cyan-500/20",
     gradient: "from-blue-600 to-cyan-400",
-    soft: "from-blue-500/18 to-cyan-400/10",
+    soft: "from-blue-500/16 to-cyan-400/8",
     ring: "ring-cyan-400/30"
   },
   green: {
     border: "border-emerald-400/40",
-    badge: "text-emerald-300",
+    badge: "text-emerald-200",
     glow: "shadow-emerald-500/20",
     gradient: "from-emerald-500 to-teal-400",
-    soft: "from-emerald-500/18 to-teal-400/10",
+    soft: "from-emerald-500/16 to-teal-400/8",
     ring: "ring-emerald-400/30"
   },
   amber: {
     border: "border-amber-400/40",
-    badge: "text-amber-300",
+    badge: "text-amber-200",
     glow: "shadow-amber-500/20",
     gradient: "from-amber-500 to-orange-500",
-    soft: "from-amber-500/18 to-orange-500/10",
+    soft: "from-amber-500/16 to-orange-500/8",
     ring: "ring-amber-400/30"
   },
   rose: {
     border: "border-rose-400/40",
-    badge: "text-rose-300",
+    badge: "text-rose-200",
     glow: "shadow-rose-500/20",
     gradient: "from-rose-500 to-pink-500",
-    soft: "from-rose-500/18 to-pink-500/10",
+    soft: "from-rose-500/16 to-pink-500/8",
     ring: "ring-rose-400/30"
   }
 };
@@ -126,6 +141,30 @@ function formatTimeRange(event: Event) {
   return end ? `${start} - ${end}` : start;
 }
 
+function formatFileSize(bytes: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileKind(fileType: string | null) {
+  if (!fileType) return "file";
+  if (fileType.startsWith("image/")) return "image";
+  if (fileType === "application/pdf") return "pdf";
+  if (fileType.startsWith("video/")) return "video";
+  if (fileType.startsWith("audio/")) return "audio";
+  if (fileType.startsWith("text/")) return "text";
+  return "file";
+}
+
+function FileKindIcon({ fileType }: { fileType: string | null }) {
+  const kind = getFileKind(fileType);
+  if (kind === "image") return <ImageIcon className="h-5 w-5" />;
+  if (kind === "pdf" || kind === "text") return <FileText className="h-5 w-5" />;
+  return <File className="h-5 w-5" />;
+}
+
 export function EventDetailClient({
   event,
   profile,
@@ -147,14 +186,14 @@ export function EventDetailClient({
   const refreshParticipants = async () => setParticipants(await getEventParticipants(event.id));
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#070817] text-white">
+    <main className="min-h-screen overflow-hidden bg-[#061319] text-white">
       <section className="relative">
         <div className={`absolute inset-0 bg-gradient-to-br ${theme.soft}`} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(0,194,255,.2),transparent_28%),radial-gradient(circle_at_18%_28%,rgba(255,94,122,.14),transparent_24%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(6,19,25,.96),rgba(9,22,34,.88)_45%,rgba(7,11,24,.96)),radial-gradient(circle_at_84%_14%,rgba(56,189,248,.18),transparent_30%)]" />
 
-        <div className="relative mx-auto max-w-[1500px] px-6 py-10">
+        <div className="relative mx-auto max-w-[1480px] px-4 pb-28 pt-8 sm:px-6 lg:px-8">
           {isOrganizer && (
-            <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[22px] border ${theme.border} bg-white/[0.08] p-4 shadow-xl ${theme.glow} backdrop-blur`}>
+            <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border ${theme.border} bg-white/[0.08] p-4 shadow-xl ${theme.glow} backdrop-blur`}>
               <p className="text-sm font-bold text-slate-200">
                 このイベントを管理できます。現在の状態: <span className={theme.badge}>{statusLabel[event.status] || event.status}</span>
               </p>
@@ -164,46 +203,43 @@ export function EventDetailClient({
             </div>
           )}
 
-          <div className="grid gap-8 lg:grid-cols-[1.08fr_420px]">
-            <section>
-              <div className={`overflow-hidden rounded-[32px] border ${theme.border} bg-white/[0.06] shadow-2xl ${theme.glow} ring-1 ${theme.ring}`}>
-                {event.cover_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={event.cover_url} alt="" className="h-[520px] w-full object-cover" />
-                ) : (
-                  <div className={`grid h-[520px] place-items-center bg-gradient-to-br ${theme.gradient} text-8xl font-black text-white`}>
-                    AI
-                  </div>
-                )}
-              </div>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_420px]">
+            <section className="min-w-0">
+              <HeroBlock event={event} theme={theme} />
 
-              <div className="mt-8">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className={`rounded-full border ${theme.border} bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] ${theme.badge}`}>
-                    {event.category || "AI Event"}
-                  </span>
-                  <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black text-slate-200">
-                    {statusLabel[event.status] || event.status}
-                  </span>
+              <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="min-w-0">
+                  <ParticipantTimeline announcements={announcements} theme={theme} />
+                  <ParticipantDocuments documents={documents} theme={theme} />
                 </div>
 
-                <h1 className="mt-5 max-w-5xl text-5xl font-black leading-tight tracking-tight md:text-7xl">{event.title}</h1>
-                <p className="mt-5 text-lg font-bold text-slate-300">{event.organizer_name || "AI Event Organizer"}</p>
-
-                {event.status === "pending" && (
-                  <div className="mt-6 rounded-[20px] border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-bold text-amber-100">
-                    このイベントは管理者の公開承認待ちです。承認後に参加者へ公開されます。
+                <aside className={`h-fit rounded-[8px] border ${theme.border} bg-white/[0.08] p-6 shadow-2xl ${theme.glow} backdrop-blur`}>
+                  <div className={`grid h-14 w-14 place-items-center rounded-[8px] bg-gradient-to-br ${theme.gradient} shadow-lg`}>
+                    <Sparkles size={24} />
                   </div>
-                )}
+                  <h2 className="mt-5 text-2xl font-black">イベント情報</h2>
 
-                <article className="mt-8 whitespace-pre-wrap rounded-[28px] border border-white/10 bg-white/[0.06] p-7 leading-8 text-slate-200 backdrop-blur">
-                  {event.description || "説明はまだありません。"}
-                </article>
+                  <div className="mt-6 grid gap-3">
+                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatDate(event.starts_at)} />
+                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTimeRange(event)} />
+                    <InfoRow icon={<MapPin size={18} />} label="場所" value={event.location || event.region || "オンライン / 未定"} />
+                    <InfoRow icon={<Ticket size={18} />} label="価格" value={event.ticket_price ? `¥${event.ticket_price}` : "無料"} />
+                    <InfoRow icon={<Users size={18} />} label="参加承認" value={isManualReview ? "手動承認" : "自動承認"} />
+                    <InfoRow icon={<CheckCircle2 size={18} />} label="承認済み" value={`${approvedCount} 名`} />
+                  </div>
+
+                  {event.online_url && (
+                    <a className={`mt-5 flex items-center gap-2 break-all rounded-[8px] border ${theme.border} bg-white/10 p-4 text-sm font-bold ${theme.badge}`} href={event.online_url}>
+                      <ExternalLink className="h-4 w-4 shrink-0" />
+                      {event.online_url}
+                    </a>
+                  )}
+                </aside>
               </div>
 
               {isOrganizer && (
                 <div className="mt-10 grid gap-8">
-                  <section className={`rounded-[28px] border ${theme.border} bg-white/[0.06] p-6 shadow-xl ${theme.glow} backdrop-blur`}>
+                  <section className={`rounded-[8px] border ${theme.border} bg-white/[0.06] p-6 shadow-xl ${theme.glow} backdrop-blur`}>
                     <h2 className="text-2xl font-black">イベント進行状況</h2>
                     <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       <StatCard label="開始日時" value={formatDateTime(event.starts_at)} />
@@ -235,73 +271,214 @@ export function EventDetailClient({
                   </ManagementSection>
                 </div>
               )}
-
-              {!isOrganizer && profile && (announcements.length > 0 || documents.length > 0) && (
-                <div className="mt-10 grid gap-8">
-                  {announcements.length > 0 && (
-                    <ManagementSection title="通知・更新">
-                      <AnnouncementsList announcements={announcements} onDelete={refreshAnnouncements} isOrganizerView={false} />
-                    </ManagementSection>
-                  )}
-
-                  {documents.length > 0 && (
-                    <ManagementSection title="資料・画像">
-                      <DocumentsList documents={documents} onDelete={refreshDocuments} isOrganizerView={false} />
-                    </ManagementSection>
-                  )}
-                </div>
-              )}
             </section>
 
-            <aside className={`h-fit rounded-[30px] border ${theme.border} bg-white/[0.08] p-7 shadow-2xl ${theme.glow} backdrop-blur lg:sticky lg:top-6`}>
-              <div className={`grid h-16 w-16 place-items-center rounded-[22px] bg-gradient-to-br ${theme.gradient} shadow-lg`}>
-                <Sparkles size={26} />
+            <aside className="hidden lg:block" aria-hidden="true">
+              <div className="sticky top-8 space-y-4 pl-2">
+                <div className="h-40 border-l border-white/25" />
+                <div className={`h-5 w-5 -translate-x-[9px] rounded-full border ${theme.border} bg-white/15 shadow-lg ${theme.glow}`} />
+                <div className="h-40 border-l border-white/25" />
+                <div className={`h-5 w-5 -translate-x-[9px] rounded-full border ${theme.border} bg-white/15 shadow-lg ${theme.glow}`} />
               </div>
-              <h2 className="mt-5 text-2xl font-black">イベント情報</h2>
-
-              <div className="mt-6 grid gap-4">
-                <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatDate(event.starts_at)} />
-                <InfoRow icon={<Clock size={18} />} label="時間" value={formatTimeRange(event)} />
-                <InfoRow icon={<MapPin size={18} />} label="場所" value={event.location || event.region || "オンライン / 未定"} />
-                <InfoRow icon={<Ticket size={18} />} label="価格" value={event.ticket_price ? `¥${event.ticket_price}` : "無料"} />
-                <InfoRow icon={<Users size={18} />} label="参加承認" value={isManualReview ? "手動承認" : "自動承認"} />
-                <InfoRow icon={<CheckCircle2 size={18} />} label="承認済み" value={`${approvedCount} 名`} />
-              </div>
-
-              {event.online_url && (
-                <a className={`mt-5 block break-all rounded-[18px] border ${theme.border} bg-white/10 p-4 text-sm font-bold ${theme.badge}`} href={event.online_url}>
-                  {event.online_url}
-                </a>
-              )}
-
-              {event.status !== "published" && !isOrganizer ? (
-                <div className="mt-8 rounded-[20px] border border-amber-300/30 bg-amber-300/10 p-4 text-sm font-bold text-amber-100">
-                  管理者の公開承認後に参加申込が可能になります。
-                </div>
-              ) : profile && !isOrganizer ? (
-                <form action={registerEventAction} className="mt-8">
-                  <input type="hidden" name="event_id" value={event.id} />
-                  <textarea className="input mb-4 min-h-24" name="message" placeholder="主催者へのメッセージ" />
-                  <button className={`btn w-full bg-gradient-to-r ${theme.gradient} text-white`}>
-                    {isManualReview ? "参加申込（承認待ち）" : "参加申込"}
-                  </button>
-                </form>
-              ) : !profile ? (
-                <Link className={`btn mt-8 w-full bg-gradient-to-r ${theme.gradient} text-white`} href={`/login?redirectTo=/events/${event.id}`}>
-                  ログインして参加申込
-                </Link>
-              ) : null}
             </aside>
           </div>
         </div>
       </section>
+
+      <FloatingAction event={event} profile={profile} isOrganizer={isOrganizer} isManualReview={isManualReview} registerEventAction={registerEventAction} theme={theme} />
     </main>
+  );
+}
+
+function HeroBlock({ event, theme }: { event: Event; theme: ReturnType<typeof getTheme> }) {
+  return (
+    <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl">
+      <div className="relative h-[360px] sm:h-[520px] lg:h-[640px]">
+        {event.cover_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={event.cover_url} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className={`grid h-full place-items-center bg-gradient-to-br ${theme.gradient} text-8xl font-black text-white`}>AI</div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#061319] via-[#061319]/48 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:p-10">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`rounded-full border ${theme.border} bg-black/25 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] ${theme.badge} backdrop-blur`}>
+              {event.category || "AI Event"}
+            </span>
+            <span className="rounded-full border border-white/20 bg-black/25 px-4 py-2 text-xs font-black text-slate-100 backdrop-blur">
+              {statusLabel[event.status] || event.status}
+            </span>
+          </div>
+          <h1 className="mt-5 max-w-5xl text-4xl font-black leading-tight sm:text-6xl lg:text-7xl">{event.title}</h1>
+          <p className="mt-4 text-base font-bold text-slate-200 sm:text-lg">{event.organizer_name || "AI Event Organizer"}</p>
+        </div>
+      </div>
+
+      {event.description && (
+        <article className="border-t border-white/10 bg-black/20 p-5 leading-8 text-slate-200 sm:p-8">
+          <p className="whitespace-pre-wrap">{event.description}</p>
+        </article>
+      )}
+    </section>
+  );
+}
+
+function ParticipantTimeline({ announcements, theme }: { announcements: Announcement[]; theme: ReturnType<typeof getTheme> }) {
+  return (
+    <section className="mt-0">
+      <div className="mb-5 flex items-center gap-3">
+        <Bell className={theme.badge} size={22} />
+        <h2 className="text-3xl font-black">通知・更新</h2>
+      </div>
+
+      {announcements.length === 0 ? (
+        <div className="rounded-[8px] border border-white/15 bg-white/[0.06] p-6 text-slate-300">まだ通知はありません。</div>
+      ) : (
+        <div className="relative ml-4 space-y-5 border-l border-white/25 pl-7">
+          {announcements.map((announcement, index) => (
+            <article key={announcement.id} className={`relative rounded-[8px] border ${theme.border} bg-white/[0.07] p-5 shadow-xl ${theme.glow} backdrop-blur`}>
+              <span className={`absolute -left-[38px] top-5 grid h-6 w-6 place-items-center rounded-full border ${theme.border} bg-[#061319] text-[10px] font-black ${theme.badge}`}>
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <p className={`text-xs font-black uppercase tracking-[0.16em] ${theme.badge}`}>
+                {new Date(announcement.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+              </p>
+              <h3 className="mt-2 text-2xl font-black">{announcement.title}</h3>
+              <p className="mt-3 whitespace-pre-wrap leading-7 text-slate-200">{announcement.content}</p>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]; theme: ReturnType<typeof getTheme> }) {
+  if (documents.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <div className="mb-5 flex items-center gap-3">
+        <FileText className={theme.badge} size={22} />
+        <h2 className="text-3xl font-black">資料・画像</h2>
+      </div>
+
+      <div className="grid gap-6">
+        {documents.map((doc) => (
+          <article key={doc.id} className={`relative overflow-hidden rounded-[8px] border ${theme.border} bg-white/[0.06] shadow-xl ${theme.glow}`}>
+            <DocumentMedia doc={doc} />
+            <div className="border-t border-white/10 bg-black/25 p-5 pr-28 backdrop-blur">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className={`mt-1 ${theme.badge}`}>
+                  <FileKindIcon fileType={doc.file_type} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="break-words text-xl font-black">{doc.title}</h3>
+                  <p className="mt-1 text-xs font-bold text-slate-400">
+                    {[formatFileSize(doc.file_size), new Date(doc.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })].filter(Boolean).join(" / ")}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <a
+              href={doc.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-4 py-3 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25"
+            >
+              <Download className="h-4 w-4" />
+              開く
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DocumentMedia({ doc }: { doc: EventDocument }) {
+  const kind = getFileKind(doc.file_type);
+
+  if (kind === "image") {
+    return (
+      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block bg-black/30">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={doc.file_url} alt={doc.title} className="max-h-[760px] w-full object-contain" />
+      </a>
+    );
+  }
+
+  if (kind === "pdf" || kind === "text") {
+    return <iframe title={doc.title} src={doc.file_url} className="h-[620px] w-full bg-white" />;
+  }
+
+  if (kind === "video") {
+    return <video src={doc.file_url} controls className="max-h-[620px] w-full bg-black" />;
+  }
+
+  if (kind === "audio") {
+    return (
+      <div className="bg-black/25 p-8">
+        <audio src={doc.file_url} controls className="w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex min-h-60 items-center justify-center gap-3 bg-black/25 p-8 text-lg font-black text-slate-200">
+      <FileKindIcon fileType={doc.file_type} />
+      ブラウザで開く
+    </a>
+  );
+}
+
+function FloatingAction({
+  event,
+  profile,
+  isOrganizer,
+  isManualReview,
+  registerEventAction,
+  theme
+}: {
+  event: Event;
+  profile: Profile | null;
+  isOrganizer: boolean;
+  isManualReview: boolean;
+  registerEventAction: (formData: FormData) => Promise<void>;
+  theme: ReturnType<typeof getTheme>;
+}) {
+  if (isOrganizer) return null;
+
+  if (event.status !== "published") {
+    return (
+      <div className="fixed bottom-5 right-5 z-30 max-w-[calc(100vw-2.5rem)] rounded-full border border-amber-300/30 bg-amber-300/15 px-5 py-3 text-sm font-black text-amber-100 shadow-2xl backdrop-blur">
+        承認後に参加できます
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Link className={`fixed bottom-5 right-5 z-30 max-w-[calc(100vw-2.5rem)] rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-2xl backdrop-blur transition hover:bg-white/25`} href={`/login?redirectTo=/events/${event.id}`}>
+        ログインして参加
+      </Link>
+    );
+  }
+
+  return (
+    <form action={registerEventAction} className="fixed bottom-5 right-5 z-30">
+      <input type="hidden" name="event_id" value={event.id} />
+      <button className={`rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-2xl backdrop-blur transition hover:bg-white/25`} type="submit">
+        {isManualReview ? "参加申込・承認待ち" : "参加申込"}
+      </button>
+    </form>
   );
 }
 
 function StatCard({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className="rounded-[20px] border border-white/10 bg-white/10 p-5">
+    <div className="rounded-[8px] border border-white/10 bg-white/10 p-5">
       <p className="text-sm font-bold text-slate-400">{label}</p>
       <p className={strong ? "mt-2 text-3xl font-black text-white" : "mt-2 font-bold text-slate-100"}>{value}</p>
     </div>
@@ -310,7 +487,7 @@ function StatCard({ label, value, strong = false }: { label: string; value: stri
 
 function ManagementSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-6 shadow-xl backdrop-blur">
+    <section className="rounded-[8px] border border-white/10 bg-white/[0.06] p-6 shadow-xl backdrop-blur">
       <h2 className="mb-5 text-2xl font-black text-white">{title}</h2>
       <div className="grid gap-5 text-slate-950">{children}</div>
     </section>
@@ -319,7 +496,7 @@ function ManagementSection({ title, children }: { title: string; children: React
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex gap-3 rounded-[18px] border border-white/10 bg-white/10 p-4">
+    <div className="flex gap-3 rounded-[8px] border border-white/10 bg-white/10 p-4">
       <span className="mt-0.5 text-cyan-200">{icon}</span>
       <div>
         <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
