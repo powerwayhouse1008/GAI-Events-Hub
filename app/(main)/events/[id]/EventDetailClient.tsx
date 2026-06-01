@@ -369,7 +369,7 @@ function HeroBlock({ event, theme }: { event: Event; theme: ReturnType<typeof ge
               {statusLabel[event.status] || event.status}
             </span>
           </div>
-          <h1 className="mt-5 max-w-5xl text-4xl font-black leading-tight sm:text-6xl lg:text-7xl">{event.title}</h1>
+          <h1 className="mt-5 max-w-5xl whitespace-pre-wrap break-words text-4xl font-black leading-tight sm:text-6xl lg:text-7xl">{event.title}</h1>
           <p className="mt-4 text-base font-bold text-slate-200 sm:text-lg">{event.organizer_name || "AI Event Organizer"}</p>
         </div>
       </div>

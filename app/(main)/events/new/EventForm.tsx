@@ -141,8 +141,8 @@ export function EventForm({ event }: EventFormProps) {
           イベントは承認待ちとして保存されます。公開するには管理者の承認が必要です。
         </div>
 
-        <input
-          className="w-full bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
+        <textarea
+          className="min-h-32 w-full resize-y whitespace-pre-wrap bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
           name="title"
           placeholder="イベント名"
           defaultValue={event?.title || ""}
