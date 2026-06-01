@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { createAnnouncement } from "@/app/(main)/events/[id]/eventManagerActions";
 import { Bell, X } from "lucide-react";
 
@@ -51,8 +52,8 @@ export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: A
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-[2147483647] grid place-items-center bg-black/60 p-4 sm:p-6">
+  return createPortal(
+    <div className="fixed inset-0 grid place-items-center bg-black/60 p-4 sm:p-6" style={{ zIndex: 2147483647 }}>
       <div className="flex max-h-[min(620px,calc(100dvh-2rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <h3 className="text-xl font-bold">通知を送信</h3>
@@ -121,6 +122,7 @@ export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: A
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
