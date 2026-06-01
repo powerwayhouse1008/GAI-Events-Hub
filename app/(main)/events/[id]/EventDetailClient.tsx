@@ -204,6 +204,7 @@ export function EventDetailClient({
   const [participants, setParticipants] = useState(initialParticipants);
   const [engagement, setEngagement] = useState(initialEngagement);
   const [showManualMessage, setShowManualMessage] = useState(false);
+  const [activeManagerModal, setActiveManagerModal] = useState<"announcement" | "document" | null>(null);
   const theme = getTheme(event);
   const isManualReview = event.approval_mode === "manual";
   const canEngage = registrationStatus === "approved";
@@ -289,12 +290,22 @@ export function EventDetailClient({
                   </section>
 
                   <ManagementSection title="通知・更新">
-                    <AnnouncementForm eventId={event.id} onSuccess={refreshAnnouncements} />
+                    <AnnouncementForm
+                      eventId={event.id}
+                      isOpen={activeManagerModal === "announcement"}
+                      onOpenChange={(open) => setActiveManagerModal(open ? "announcement" : null)}
+                      onSuccess={refreshAnnouncements}
+                    />
                     <AnnouncementsList announcements={announcements} onDelete={refreshAnnouncements} isOrganizerView />
                   </ManagementSection>
 
                   <ManagementSection title="資料・画像">
-                    <DocumentUpload eventId={event.id} onSuccess={refreshDocuments} />
+                    <DocumentUpload
+                      eventId={event.id}
+                      isOpen={activeManagerModal === "document"}
+                      onOpenChange={(open) => setActiveManagerModal(open ? "document" : null)}
+                      onSuccess={refreshDocuments}
+                    />
                     <DocumentsList documents={documents} onDelete={refreshDocuments} isOrganizerView />
                   </ManagementSection>
 

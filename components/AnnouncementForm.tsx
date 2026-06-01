@@ -5,10 +5,11 @@ import { Bell, X } from "lucide-react";
 interface AnnouncementFormProps {
   eventId: string;
   onSuccess: () => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: AnnouncementFormProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +29,7 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
       await createAnnouncement(eventId, title, content);
       setTitle("");
       setContent("");
-      setIsOpen(false);
+      onOpenChange(false);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "通知を送信できませんでした。");
@@ -40,8 +41,9 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => onOpenChange(true)}
         className="btn btn-primary gap-2"
+        type="button"
       >
         <Bell className="h-4 w-4" />
         新しい通知
@@ -50,12 +52,12 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-[2147483647] flex items-center justify-center overflow-y-auto bg-black/60 p-4 sm:p-6">
-      <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)]">
+    <div className="fixed inset-0 z-[2147483647] grid place-items-center bg-black/60 p-4 sm:p-6">
+      <div className="flex max-h-[min(620px,calc(100dvh-2rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <h3 className="text-xl font-bold">通知を送信</h3>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => onOpenChange(false)}
             className="text-slate-400 hover:text-slate-600"
             type="button"
           >
@@ -64,7 +66,7 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div>
               <label className="label">
                 <span className="label-text font-bold">タイトル</span>
@@ -103,7 +105,7 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
           <div className="flex shrink-0 gap-2 border-t border-slate-100 bg-white px-6 py-4">
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="btn btn-ghost flex-1"
               disabled={isLoading}
             >

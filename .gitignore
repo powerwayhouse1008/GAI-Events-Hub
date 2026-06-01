@@ -1,4 +1,5 @@
 node_modules/
+GAI-Events-Hub/
 .next/
 /.env.local
 .env
