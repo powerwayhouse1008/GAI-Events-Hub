@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import {
   Bell,
   CalendarDays,
@@ -59,7 +59,6 @@ interface EventDetailClientProps {
     myCommentRestricted: boolean;
   };
   registrationStatus: RegistrationStatus | null;
-  registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
 }
 
 const statusLabel: Record<string, string> = {
@@ -198,8 +197,7 @@ export function EventDetailClient({
   documents: initialDocuments,
   participants: initialParticipants,
   engagement: initialEngagement,
-  registrationStatus,
-  registerEventAction
+  registrationStatus
 }: EventDetailClientProps) {
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [documents, setDocuments] = useState(initialDocuments);
@@ -217,7 +215,7 @@ export function EventDetailClient({
   const refreshEngagement = async () => setEngagement(await getEventEngagement(event.id));
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#061319] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#061319] text-white">
       <section className="relative">
         <div className={`absolute inset-0 bg-gradient-to-br ${theme.soft}`} />
         <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(6,19,25,.96),rgba(9,22,34,.88)_45%,rgba(7,11,24,.96)),radial-gradient(circle_at_84%_14%,rgba(56,189,248,.18),transparent_30%)]" />
@@ -275,17 +273,6 @@ export function EventDetailClient({
                     </a>
                   )}
 
-                  <RegistrationAction
-                    event={event}
-                    profile={profile}
-                    isOrganizer={isOrganizer}
-                    registrationStatus={registrationStatus}
-                    isManualReview={isManualReview}
-                    registerEventAction={registerEventAction}
-                    showManualMessage={showManualMessage}
-                    setShowManualMessage={setShowManualMessage}
-                    theme={theme}
-                  />
                 </aside>
               </div>
 
@@ -336,6 +323,17 @@ export function EventDetailClient({
           </div>
         </div>
       </section>
+
+      <RegistrationAction
+        event={event}
+        profile={profile}
+        isOrganizer={isOrganizer}
+        registrationStatus={registrationStatus}
+        isManualReview={isManualReview}
+        showManualMessage={showManualMessage}
+        setShowManualMessage={setShowManualMessage}
+        theme={theme}
+      />
     </main>
   );
 }
@@ -682,7 +680,6 @@ function RegistrationAction({
   isOrganizer,
   registrationStatus,
   isManualReview,
-  registerEventAction,
   showManualMessage,
   setShowManualMessage,
   theme
@@ -692,21 +689,44 @@ function RegistrationAction({
   isOrganizer: boolean;
   registrationStatus: RegistrationStatus | null;
   isManualReview: boolean;
-  registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
   showManualMessage: boolean;
   setShowManualMessage: (value: boolean) => void;
   theme: ReturnType<typeof getTheme>;
 }) {
-  const [registrationState, submitRegistration, isSubmitting] = useActionState(
-    async (_previousState: RegisterEventResult | null, formData: FormData) => registerEventAction(formData),
-    null
-  );
+  const [registrationState, setRegistrationState] = useState<RegisterEventResult | null>(null);
+  const [localRegistrationStatus, setLocalRegistrationStatus] = useState(registrationStatus);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submitRegistration = async (message = "") => {
+    setIsSubmitting(true);
+    setRegistrationState(null);
+
+    try {
+      const response = await fetch(`/api/events/${event.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const result = (await response.json()) as RegisterEventResult;
+      setRegistrationState(result);
+
+      if (result.ok && result.status) {
+        setLocalRegistrationStatus(result.status);
+        setShowManualMessage(false);
+      }
+    } catch (error) {
+      console.error("Registration request failed:", error);
+      setRegistrationState({ ok: false, message: "参加申込を送信できませんでした。" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isOrganizer) return null;
 
   if (event.status !== "published") {
     return (
-      <div className="mt-6 rounded-[8px] border border-amber-300/30 bg-amber-300/15 p-4 text-sm font-black text-amber-100">
+      <div className="fixed bottom-5 right-5 z-[9999] max-w-[calc(100vw-2.5rem)] rounded-[8px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-black text-amber-800 shadow-2xl">
         承認後に参加できます
       </div>
     );
@@ -714,23 +734,23 @@ function RegistrationAction({
 
   if (!profile) {
     return (
-      <Link className={`mt-6 inline-flex w-full items-center justify-center rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`} href={`/login?redirectTo=/events/${event.id}`}>
+      <Link className="fixed bottom-5 right-5 z-[9999] inline-flex max-w-[calc(100vw-2.5rem)] items-center justify-center rounded-full border border-yellow-200 bg-yellow-300 px-6 py-4 text-sm font-black text-slate-950 shadow-2xl ring-4 ring-yellow-100/70 transition hover:bg-yellow-200" href={`/login?redirectTo=/events/${event.id}`}>
         ログインして参加
       </Link>
     );
   }
 
-  if (registrationStatus === "approved" || registrationStatus === "pending") {
+  if (localRegistrationStatus === "approved" || localRegistrationStatus === "pending") {
     return (
-      <div className="mt-6 rounded-[8px] border border-emerald-300/30 bg-emerald-300/15 p-4 text-sm font-black text-emerald-100">
-        {registrationStatus === "approved" ? "参加済みです。" : "参加申込済みです。承認をお待ちください。"}
+      <div className="fixed bottom-5 right-5 z-[9999] max-w-[calc(100vw-2.5rem)] rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-800 shadow-2xl">
+        {localRegistrationStatus === "approved" ? "参加済みです。" : "参加申込済みです。承認をお待ちください。"}
       </div>
     );
   }
 
-  if (registrationStatus === "rejected") {
+  if (localRegistrationStatus === "rejected") {
     return (
-      <div className="mt-6 rounded-[8px] border border-red-300/30 bg-red-300/15 p-4 text-sm font-black text-red-100">
+      <div className="fixed bottom-5 right-5 z-[9999] max-w-[calc(100vw-2.5rem)] rounded-[8px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-black text-red-700 shadow-2xl">
         参加申込は却下されています。
       </div>
     );
@@ -738,10 +758,15 @@ function RegistrationAction({
 
   if (!isManualReview) {
     return (
-      <form action={submitRegistration} className="mt-6">
-        <input type="hidden" name="event_id" value={event.id} />
+      <form
+        className="fixed bottom-5 right-5 z-[9999] max-w-[calc(100vw-2.5rem)]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submitRegistration();
+        }}
+      >
         <button
-          className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25 disabled:cursor-wait disabled:opacity-75`}
+          className="rounded-full border border-yellow-200 bg-yellow-300 px-7 py-4 text-sm font-black text-slate-950 shadow-2xl ring-4 ring-yellow-100/70 transition hover:bg-yellow-200 disabled:cursor-wait disabled:opacity-75"
           disabled={isSubmitting}
           type="submit"
         >
@@ -753,24 +778,30 @@ function RegistrationAction({
   }
 
   return (
-    <div className="mt-6">
+    <div className="fixed bottom-5 right-5 z-[9999] w-[min(360px,calc(100vw-2.5rem))]">
       {!showManualMessage ? (
         <button
-          className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`}
+          className="w-full rounded-full border border-yellow-200 bg-yellow-300 px-7 py-4 text-sm font-black text-slate-950 shadow-2xl ring-4 ring-yellow-100/70 transition hover:bg-yellow-200"
           onClick={() => setShowManualMessage(true)}
           type="button"
         >
           参加申込
         </button>
       ) : (
-        <form action={submitRegistration} className={`rounded-[8px] border ${theme.border} bg-black/20 p-4 shadow-xl backdrop-blur`}>
-          <input type="hidden" name="event_id" value={event.id} />
-          <label className="flex items-center gap-2 text-sm font-black text-slate-100" htmlFor="registration-message">
+        <form
+          className="rounded-[8px] border border-yellow-200 bg-white p-4 text-slate-950 shadow-2xl"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            void submitRegistration(String(formData.get("message") || ""));
+          }}
+        >
+          <label className="flex items-center gap-2 text-sm font-black text-slate-950" htmlFor="registration-message">
             <MessageSquare className="h-4 w-4" />
             主催者へのメッセージ
           </label>
           <textarea
-            className="mt-3 min-h-28 w-full resize-y rounded-[8px] border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
+            className="mt-3 min-h-28 w-full resize-y rounded-[8px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400 focus:border-yellow-400"
             id="registration-message"
             name="message"
             placeholder="参加目的や主催者への連絡事項を入力してください"
@@ -778,13 +809,13 @@ function RegistrationAction({
           <RegistrationNotice state={registrationState} />
           <div className="mt-3 flex gap-2">
             <button
-              className={`min-w-0 flex-1 rounded-full border ${theme.border} bg-white/15 px-4 py-3 text-sm font-black text-white transition hover:bg-white/25 disabled:cursor-wait disabled:opacity-75`}
+              className="min-w-0 flex-1 rounded-full border border-yellow-200 bg-yellow-300 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-yellow-200 disabled:cursor-wait disabled:opacity-75"
               disabled={isSubmitting}
               type="submit"
             >
               {isSubmitting ? "送信中..." : "参加申込を送信"}
             </button>
-            <button className="rounded-full border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-slate-200 transition hover:bg-white/20" disabled={isSubmitting} onClick={() => setShowManualMessage(false)} type="button">
+            <button className="rounded-full border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200" disabled={isSubmitting} onClick={() => setShowManualMessage(false)} type="button">
               閉じる
             </button>
           </div>
@@ -801,8 +832,8 @@ function RegistrationNotice({ state }: { state: RegisterEventResult | null }) {
     <div
       className={`mt-3 rounded-[8px] border p-3 text-sm font-bold ${
         state.ok
-          ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100"
-          : "border-red-300/30 bg-red-300/15 text-red-100"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-red-200 bg-red-50 text-red-700"
       }`}
     >
       {state.message}

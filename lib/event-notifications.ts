@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEventEmailToUsers } from "@/lib/event-email-notifications";
 
 type NotificationType = "announcement" | "document" | "event_update";
 
@@ -30,14 +31,22 @@ export async function notifyEventParticipants({
 
   if (!uniqueUserIds.length) return;
 
-  await supabase.from("event_notifications").insert(
-    uniqueUserIds.map((userId) => ({
-      event_id: eventId,
-      user_id: userId,
-      actor_id: actorId,
-      type,
-      title,
-      message: message || null
-    }))
-  );
+  await Promise.all([
+    supabase.from("event_notifications").insert(
+      uniqueUserIds.map((userId) => ({
+        event_id: eventId,
+        user_id: userId,
+        actor_id: actorId,
+        type,
+        title,
+        message: message || null
+      }))
+    ),
+    sendEventEmailToUsers({
+      userIds: uniqueUserIds,
+      eventId,
+      subject: title,
+      message: message || title
+    })
+  ]);
 }

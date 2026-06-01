@@ -47,9 +47,7 @@ export async function GET(request: NextRequest) {
   const next = getSafePath(requestUrl.searchParams.get("next"), "/events");
   const requestedRole =
     requestUrl.searchParams.get("requested_role") === "organizer" ? "organizer" : "member";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL
-    ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin
-    : requestUrl.origin;
+  const origin = requestUrl.origin;
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.redirect(getOAuthErrorUrl(origin, mode));

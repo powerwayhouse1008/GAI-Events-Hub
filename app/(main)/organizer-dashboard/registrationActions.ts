@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOrganizer } from "@/lib/auth";
+import { sendRegistrationStatusEmail } from "@/lib/event-email-notifications";
 
 export async function setRegistrationStatus(registrationId: string, status: "approved" | "rejected") {
   const profile = await requireOrganizer();
@@ -26,6 +27,8 @@ export async function setRegistrationStatus(registrationId: string, status: "app
 
   const { error } = await supabase.from("registrations").update({ status }).eq("id", id);
   if (error) return { ok: false, message: error.message };
+
+  await sendRegistrationStatusEmail(id, status);
 
   if (registration?.event_id) revalidatePath(`/events/${registration.event_id}`);
   revalidatePath("/organizer-dashboard");

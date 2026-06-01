@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { registerEvent } from "./registerEvent";
 import { getAnnouncements, getEventDocuments, getEventEngagement, getEventParticipants } from "./eventManagerActions";
 import { EventDetailClient } from "./EventDetailClient";
 import type { Event, EventComment, RegistrationStatus } from "@/lib/types";
@@ -73,7 +72,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       participants={participants}
       engagement={engagement}
       registrationStatus={registrationStatus}
-      registerEventAction={registerEvent}
     />
   );
 }

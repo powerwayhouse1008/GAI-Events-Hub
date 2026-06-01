@@ -59,7 +59,7 @@ async function syncOAuthProfile(supabase: Awaited<ReturnType<typeof createClient
     // service role key is not configured. This keeps Google login usable.
   }
 
-  await supabase.from("profiles").upsert(
+  const { error } = await supabase.from("profiles").upsert(
     {
       id: payload.id,
       email: payload.email,
@@ -71,6 +71,10 @@ async function syncOAuthProfile(supabase: Awaited<ReturnType<typeof createClient
     },
     { onConflict: "id" }
   );
+
+  if (error) {
+    console.error("OAuth profile fallback sync failed:", error.message);
+  }
 }
 
 export async function GET(request: Request) {
