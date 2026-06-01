@@ -45,9 +45,7 @@ export async function registerEvent(formData: FormData) {
         user.email?.split("@")[0] ||
         "User",
       avatar_url: user.user_metadata?.avatar_url || null,
-      company_name: user.user_metadata?.company_name || null,
-      role: user.user_metadata?.requested_role === "organizer" ? "organizer" : "member",
-      organizer_status: user.user_metadata?.requested_role === "organizer" ? "approved" : "none"
+      company_name: user.user_metadata?.company_name || null
     },
     { onConflict: "id" }
   );
