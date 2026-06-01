@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { registerEvent } from "./registerEvent";
 import { getAnnouncements, getEventDocuments, getEventEngagement, getEventParticipants } from "./eventManagerActions";
 import { EventDetailClient } from "./EventDetailClient";
-import type { Event, EventComment } from "@/lib/types";
+import type { Event, EventComment, RegistrationStatus } from "@/lib/types";
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,6 +15,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const event = data as Event;
   const profile = await getProfile();
   const isOrganizer = profile?.role === "admin" || profile?.id === event.organizer_id;
+  let registrationStatus: RegistrationStatus | null = null;
 
   let announcements: any[] = [];
   let documents: any[] = [];
@@ -36,11 +37,25 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   };
 
   try {
-    [announcements, documents, engagement] = await Promise.all([
+    const [loadedAnnouncements, loadedDocuments, loadedEngagement, currentRegistration] = await Promise.all([
       profile ? getAnnouncements(id) : Promise.resolve([]),
       profile ? getEventDocuments(id) : Promise.resolve([]),
-      profile ? getEventEngagement(id) : Promise.resolve(engagement)
+      profile ? getEventEngagement(id) : Promise.resolve(engagement),
+      profile && !isOrganizer
+        ? supabase
+            .from("registrations")
+            .select("status")
+            .eq("event_id", id)
+            .eq("user_id", profile.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null })
     ]);
+
+    announcements = loadedAnnouncements;
+    documents = loadedDocuments;
+    engagement = loadedEngagement;
+    registrationStatus = (currentRegistration.data?.status as RegistrationStatus | undefined) || null;
+
     if (isOrganizer) {
       participants = await getEventParticipants(id);
     }
@@ -57,6 +72,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       documents={documents}
       participants={participants}
       engagement={engagement}
+      registrationStatus={registrationStatus}
       registerEventAction={registerEvent}
     />
   );

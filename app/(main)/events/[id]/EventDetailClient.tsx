@@ -41,7 +41,7 @@ import {
   unrestrictEventCommenter
 } from "./eventManagerActions";
 import type { RegisterEventResult } from "./registerEvent";
-import type { Announcement, Event, EventComment, EventDocument, Profile } from "@/lib/types";
+import type { Announcement, Event, EventComment, EventDocument, Profile, RegistrationStatus } from "@/lib/types";
 
 interface EventDetailClientProps {
   event: Event;
@@ -58,6 +58,7 @@ interface EventDetailClientProps {
     restrictedUserIds: string[];
     myCommentRestricted: boolean;
   };
+  registrationStatus: RegistrationStatus | null;
   registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
 }
 
@@ -197,6 +198,7 @@ export function EventDetailClient({
   documents: initialDocuments,
   participants: initialParticipants,
   engagement: initialEngagement,
+  registrationStatus,
   registerEventAction
 }: EventDetailClientProps) {
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
@@ -206,6 +208,7 @@ export function EventDetailClient({
   const [showManualMessage, setShowManualMessage] = useState(false);
   const theme = getTheme(event);
   const isManualReview = event.approval_mode === "manual";
+  const canEngage = registrationStatus === "approved";
   const approvedCount = participants.filter((participant: any) => participant.status === "approved").length;
 
   const refreshAnnouncements = async () => setAnnouncements(await getAnnouncements(event.id));
@@ -243,6 +246,7 @@ export function EventDetailClient({
                     eventId={event.id}
                     profile={profile}
                     isOrganizer={isOrganizer}
+                    canEngage={canEngage}
                     engagement={engagement}
                     onUpdated={refreshEngagement}
                     theme={theme}
@@ -275,6 +279,7 @@ export function EventDetailClient({
                     event={event}
                     profile={profile}
                     isOrganizer={isOrganizer}
+                    registrationStatus={registrationStatus}
                     isManualReview={isManualReview}
                     registerEventAction={registerEventAction}
                     showManualMessage={showManualMessage}
@@ -490,6 +495,7 @@ function EventEngagementPanel({
   eventId,
   profile,
   isOrganizer,
+  canEngage,
   engagement,
   onUpdated,
   theme
@@ -497,6 +503,7 @@ function EventEngagementPanel({
   eventId: string;
   profile: Profile | null;
   isOrganizer: boolean;
+  canEngage: boolean;
   engagement: {
     likes: number;
     dislikes: number;
@@ -549,7 +556,7 @@ function EventEngagementPanel({
             className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
               engagement.myVote === 1 ? "bg-emerald-400/25 text-emerald-100" : "bg-white/10 text-white hover:bg-white/20"
             }`}
-            disabled={!profile || busy === "vote-1"}
+            disabled={!profile || !canEngage || busy === "vote-1"}
             onClick={() => vote(1)}
             type="button"
           >
@@ -560,7 +567,7 @@ function EventEngagementPanel({
             className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
               engagement.myVote === -1 ? "bg-rose-400/25 text-rose-100" : "bg-white/10 text-white hover:bg-white/20"
             }`}
-            disabled={!profile || busy === "vote--1"}
+            disabled={!profile || !canEngage || busy === "vote--1"}
             onClick={() => vote(-1)}
             type="button"
           >
@@ -572,7 +579,7 @@ function EventEngagementPanel({
 
       {notice && <div className="mt-4 rounded-[8px] border border-amber-300/30 bg-amber-300/15 p-3 text-sm font-bold text-amber-100">{notice}</div>}
 
-      {profile && !isOrganizer && !engagement.myCommentRestricted && (
+      {profile && !isOrganizer && canEngage && !engagement.myCommentRestricted && (
         <div className="mt-5 grid gap-3">
           <textarea
             className="min-h-28 resize-y rounded-[8px] border border-white/15 bg-black/20 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
@@ -594,6 +601,12 @@ function EventEngagementPanel({
       {profile && engagement.myCommentRestricted && (
         <div className="mt-5 rounded-[8px] border border-red-300/30 bg-red-300/15 p-3 text-sm font-bold text-red-100">
           このイベントではコメント権限が制限されています。
+        </div>
+      )}
+
+      {profile && !isOrganizer && !canEngage && (
+        <div className="mt-5 rounded-[8px] border border-white/15 bg-white/10 p-3 text-sm font-bold text-slate-200">
+          参加が承認された後にコメントと投票ができます。
         </div>
       )}
 
@@ -667,6 +680,7 @@ function RegistrationAction({
   event,
   profile,
   isOrganizer,
+  registrationStatus,
   isManualReview,
   registerEventAction,
   showManualMessage,
@@ -676,6 +690,7 @@ function RegistrationAction({
   event: Event;
   profile: Profile | null;
   isOrganizer: boolean;
+  registrationStatus: RegistrationStatus | null;
   isManualReview: boolean;
   registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
   showManualMessage: boolean;
@@ -702,6 +717,22 @@ function RegistrationAction({
       <Link className={`mt-6 inline-flex w-full items-center justify-center rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`} href={`/login?redirectTo=/events/${event.id}`}>
         ログインして参加
       </Link>
+    );
+  }
+
+  if (registrationStatus === "approved" || registrationStatus === "pending") {
+    return (
+      <div className="mt-6 rounded-[8px] border border-emerald-300/30 bg-emerald-300/15 p-4 text-sm font-black text-emerald-100">
+        {registrationStatus === "approved" ? "参加済みです。" : "参加申込済みです。承認をお待ちください。"}
+      </div>
+    );
+  }
+
+  if (registrationStatus === "rejected") {
+    return (
+      <div className="mt-6 rounded-[8px] border border-red-300/30 bg-red-300/15 p-4 text-sm font-black text-red-100">
+        参加申込は却下されています。
+      </div>
     );
   }
 

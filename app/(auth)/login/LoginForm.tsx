@@ -13,6 +13,9 @@ function getOAuthMessage(error: string | null) {
   if (error === "google_not_enabled") {
     return "Googleログインはまだ有効になっていません。SupabaseのAuthentication ProvidersでGoogleを有効にしてください。";
   }
+  if (error === "oauth_exchange_failed") {
+    return "Googleログインの認証コードをセッションに交換できませんでした。SupabaseのRedirect URLが現在のURLの /auth/callback と一致しているか確認してください。";
+  }
 
   return "";
 }
