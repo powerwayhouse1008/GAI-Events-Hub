@@ -1,16 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { ApprovalStatus, Profile, UserRole } from "@/lib/types";
-import { createDefaultAdmin, deleteAccount, grantAdmin, revokeAdmin } from "./accountActions";
-
-type AccountRow = {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  company_name: string | null;
-  role: UserRole;
-  organizer_status: ApprovalStatus;
-};
+import type { Profile } from "@/lib/types";
+import { AdminAccountsClient } from "./AdminAccountsClient";
+import type { AccountRow } from "./AdminAccountsClient";
 
 async function listAllAuthUsers() {
   const supabase = createAdminClient();
@@ -89,91 +81,7 @@ export default async function AdminAccountsPage() {
 
   return (
     <main className="mx-auto max-w-[1600px] px-6 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-5xl font-black tracking-tight">アカウント権限</h1>
-          <p className="mt-3 text-slate-500">
-            登録済みアカウントの管理者権限を変更し、不要なアカウントを削除できます。
-          </p>
-        </div>
-        <form action={createDefaultAdmin}>
-          <button className="rounded-xl bg-purple-700 px-5 py-3 font-bold text-white hover:bg-purple-800">
-            mai@powerway.jp を管理者に設定
-          </button>
-        </form>
-      </div>
-
-      <section className="card mt-8 overflow-x-auto p-7">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b">
-              <th className="p-3">名前</th>
-              <th className="p-3">メール</th>
-              <th className="p-3">会社・コミュニティ</th>
-              <th className="p-3">権限</th>
-              <th className="p-3">主催者状態</th>
-              <th className="p-3">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accounts.map((account) => {
-              const isCurrentAdmin = account.id === currentAdmin.id;
-
-              return (
-                <tr key={account.id} className="border-b">
-                  <td className="p-3 font-bold">{account.display_name || "-"}</td>
-                  <td className="p-3">{account.email || "-"}</td>
-                  <td className="p-3">{account.company_name || "-"}</td>
-                  <td className="p-3">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                      {account.role}
-                    </span>
-                  </td>
-                  <td className="p-3">{account.organizer_status}</td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-2">
-                      <form action={grantAdmin}>
-                        <input type="hidden" name="id" value={account.id} />
-                        <button
-                          disabled={account.role === "admin"}
-                          className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          管理者にする
-                        </button>
-                      </form>
-                      <form action={revokeAdmin}>
-                        <input type="hidden" name="id" value={account.id} />
-                        <button
-                          disabled={account.role !== "admin" || isCurrentAdmin}
-                          className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          管理者解除
-                        </button>
-                      </form>
-                      <form action={deleteAccount}>
-                        <input type="hidden" name="id" value={account.id} />
-                        <button
-                          disabled={isCurrentAdmin}
-                          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          アカウント削除
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {!accounts.length && (
-              <tr>
-                <td colSpan={6} className="p-3 text-slate-500">
-                  アカウントがありません。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </section>
+      <AdminAccountsClient initialAccounts={accounts} currentAdminId={currentAdmin.id} />
     </main>
   );
 }

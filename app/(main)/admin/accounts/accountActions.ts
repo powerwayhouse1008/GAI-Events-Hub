@@ -12,6 +12,17 @@ function refreshAdminPages() {
   revalidatePath("/admin/accounts");
 }
 
+export type AccountActionResult = {
+  ok: boolean;
+  message?: string;
+  account?: {
+    id: string;
+    role?: "member" | "organizer" | "admin";
+    organizer_status?: "none" | "pending" | "approved" | "rejected";
+  };
+  deletedId?: string;
+};
+
 async function findAuthUserByEmail(email: string) {
   const supabase = createAdminClient();
   let page = 1;
@@ -68,29 +79,44 @@ async function ensureProfile(id: string) {
 
   await clearDuplicateProfileEmails(user.email, user.id);
 
-  const { data: profile } = await supabase
+  const payload = {
+    id: user.id,
+    email: user.email || null,
+    display_name:
+      String(user.user_metadata?.display_name || user.user_metadata?.full_name || "") ||
+      user.email?.split("@")[0] ||
+      "User",
+    avatar_url:
+      typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
+    company_name:
+      typeof user.user_metadata?.company_name === "string"
+        ? user.user_metadata.company_name
+        : null,
+    role: user.user_metadata?.requested_role === "organizer" ? "organizer" : "member",
+    organizer_status: user.user_metadata?.requested_role === "organizer" ? "approved" : "none"
+  };
+
+  const { data: profile, error } = await supabase
     .from("profiles")
-    .upsert(
-      {
-        id: user.id,
-        email: user.email || null,
-        display_name:
-          String(user.user_metadata?.display_name || user.user_metadata?.full_name || "") ||
-          user.email?.split("@")[0] ||
-          "User",
-        avatar_url:
-          typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
-        company_name:
-          typeof user.user_metadata?.company_name === "string"
-            ? user.user_metadata.company_name
-            : null,
-        role: user.user_metadata?.requested_role === "organizer" ? "organizer" : "member",
-        organizer_status: user.user_metadata?.requested_role === "organizer" ? "approved" : "none"
-      },
-      { onConflict: "id" }
-    )
+    .upsert(payload, { onConflict: "id" })
     .select("*")
     .maybeSingle();
+
+  if (!error) return profile;
+
+  for (const role of ["member", "user", "participant", "attendee"]) {
+    const { data: fallbackProfile, error: fallbackError } = await supabase
+      .from("profiles")
+      .insert({
+        ...payload,
+        role,
+        organizer_status: "none"
+      })
+      .select("*")
+      .maybeSingle();
+
+    if (!fallbackError) return fallbackProfile;
+  }
 
   return profile;
 }
@@ -99,54 +125,72 @@ export async function grantAdmin(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id") || "");
-  if (!id) return;
+  if (!id) return { ok: false, message: "Account id is missing." } satisfies AccountActionResult;
 
-  await ensureProfile(id);
+  const profile = await ensureProfile(id);
+  if (!profile) return { ok: false, message: "Profile could not be prepared." } satisfies AccountActionResult;
 
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({ role: "admin", organizer_status: "approved" })
     .eq("id", id);
 
+  if (error) return { ok: false, message: error.message } satisfies AccountActionResult;
+
   refreshAdminPages();
+  return {
+    ok: true,
+    account: { id, role: "admin", organizer_status: "approved" }
+  } satisfies AccountActionResult;
 }
 
 export async function revokeAdmin(formData: FormData) {
   const currentAdmin = await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id") || "");
-  if (!id) return;
+  if (!id) return { ok: false, message: "Account id is missing." } satisfies AccountActionResult;
 
   if (id === currentAdmin.id) {
     refreshAdminPages();
-    return;
+    return { ok: false, message: "You cannot revoke your own admin access." } satisfies AccountActionResult;
   }
 
-  await ensureProfile(id);
+  const profile = await ensureProfile(id);
+  if (!profile) return { ok: false, message: "Profile could not be prepared." } satisfies AccountActionResult;
 
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({ role: "member", organizer_status: "none" })
     .eq("id", id);
 
+  if (error) return { ok: false, message: error.message } satisfies AccountActionResult;
+
   refreshAdminPages();
+  return {
+    ok: true,
+    account: { id, role: "member", organizer_status: "none" }
+  } satisfies AccountActionResult;
 }
 
 export async function deleteAccount(formData: FormData) {
   const currentAdmin = await requireAdmin();
   const supabase = createAdminClient();
   const id = String(formData.get("id") || "");
-  if (!id) return;
+  if (!id) return { ok: false, message: "Account id is missing." } satisfies AccountActionResult;
 
   if (id === currentAdmin.id) {
     refreshAdminPages();
-    return;
+    return { ok: false, message: "You cannot delete your own account." } satisfies AccountActionResult;
   }
 
-  await supabase.from("profiles").delete().eq("id", id);
-  await supabase.auth.admin.deleteUser(id);
+  const { error: profileError } = await supabase.from("profiles").delete().eq("id", id);
+  if (profileError) return { ok: false, message: profileError.message } satisfies AccountActionResult;
+
+  const { error: authError } = await supabase.auth.admin.deleteUser(id);
+  if (authError) return { ok: false, message: authError.message } satisfies AccountActionResult;
 
   refreshAdminPages();
+  return { ok: true, deletedId: id } satisfies AccountActionResult;
 }
 
 export async function createDefaultAdmin() {
@@ -179,14 +223,14 @@ export async function createDefaultAdmin() {
     });
     if (error) {
       refreshAdminPages();
-      return;
+      return { ok: false, message: error.message } satisfies AccountActionResult;
     }
     user = data.user;
   }
 
   await clearDuplicateProfileEmails(email, user.id);
 
-  await supabase.from("profiles").upsert(
+  const { error } = await supabase.from("profiles").upsert(
     {
       id: user.id,
       email,
@@ -197,5 +241,11 @@ export async function createDefaultAdmin() {
     { onConflict: "id" }
   );
 
+  if (error) return { ok: false, message: error.message } satisfies AccountActionResult;
+
   refreshAdminPages();
+  return {
+    ok: true,
+    account: { id: user.id, role: "admin", organizer_status: "approved" }
+  } satisfies AccountActionResult;
 }
