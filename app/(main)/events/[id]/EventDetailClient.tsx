@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import {
   Bell,
   CalendarDays,
@@ -26,6 +26,7 @@ import { DocumentsList } from "@/components/DocumentsList";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
 import { getAnnouncements, getEventDocuments, getEventParticipants } from "./eventManagerActions";
+import type { RegisterEventResult } from "./registerEvent";
 import type { Announcement, Event, EventDocument, Profile } from "@/lib/types";
 
 interface EventDetailClientProps {
@@ -35,7 +36,7 @@ interface EventDetailClientProps {
   announcements: Announcement[];
   documents: EventDocument[];
   participants: any[];
-  registerEventAction: (formData: FormData) => Promise<void>;
+  registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
 }
 
 const statusLabel: Record<string, string> = {
@@ -466,11 +467,16 @@ function RegistrationAction({
   profile: Profile | null;
   isOrganizer: boolean;
   isManualReview: boolean;
-  registerEventAction: (formData: FormData) => Promise<void>;
+  registerEventAction: (formData: FormData) => Promise<RegisterEventResult>;
   showManualMessage: boolean;
   setShowManualMessage: (value: boolean) => void;
   theme: ReturnType<typeof getTheme>;
 }) {
+  const [registrationState, submitRegistration, isSubmitting] = useActionState(
+    async (_previousState: RegisterEventResult | null, formData: FormData) => registerEventAction(formData),
+    null
+  );
+
   if (isOrganizer) return null;
 
   if (event.status !== "published") {
@@ -491,11 +497,16 @@ function RegistrationAction({
 
   if (!isManualReview) {
     return (
-      <form action={registerEventAction} className="mt-6">
+      <form action={submitRegistration} className="mt-6">
         <input type="hidden" name="event_id" value={event.id} />
-        <button className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`} type="submit">
-          参加申込
+        <button
+          className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25 disabled:cursor-wait disabled:opacity-75`}
+          disabled={isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? "送信中..." : "参加申込"}
         </button>
+        <RegistrationNotice state={registrationState} />
       </form>
     );
   }
@@ -511,7 +522,7 @@ function RegistrationAction({
           参加申込
         </button>
       ) : (
-        <form action={registerEventAction} className={`rounded-[8px] border ${theme.border} bg-black/20 p-4 shadow-xl backdrop-blur`}>
+        <form action={submitRegistration} className={`rounded-[8px] border ${theme.border} bg-black/20 p-4 shadow-xl backdrop-blur`}>
           <input type="hidden" name="event_id" value={event.id} />
           <label className="flex items-center gap-2 text-sm font-black text-slate-100" htmlFor="registration-message">
             <MessageSquare className="h-4 w-4" />
@@ -523,16 +534,37 @@ function RegistrationAction({
             name="message"
             placeholder="参加目的や主催者への連絡事項を入力してください"
           />
+          <RegistrationNotice state={registrationState} />
           <div className="mt-3 flex gap-2">
-            <button className={`min-w-0 flex-1 rounded-full border ${theme.border} bg-white/15 px-4 py-3 text-sm font-black text-white transition hover:bg-white/25`} type="submit">
-              送信
+            <button
+              className={`min-w-0 flex-1 rounded-full border ${theme.border} bg-white/15 px-4 py-3 text-sm font-black text-white transition hover:bg-white/25 disabled:cursor-wait disabled:opacity-75`}
+              disabled={isSubmitting}
+              type="submit"
+            >
+              {isSubmitting ? "送信中..." : "参加申込を送信"}
             </button>
-            <button className="rounded-full border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-slate-200 transition hover:bg-white/20" onClick={() => setShowManualMessage(false)} type="button">
+            <button className="rounded-full border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-slate-200 transition hover:bg-white/20" disabled={isSubmitting} onClick={() => setShowManualMessage(false)} type="button">
               閉じる
             </button>
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+function RegistrationNotice({ state }: { state: RegisterEventResult | null }) {
+  if (!state) return null;
+
+  return (
+    <div
+      className={`mt-3 rounded-[8px] border p-3 text-sm font-bold ${
+        state.ok
+          ? "border-emerald-300/30 bg-emerald-300/15 text-emerald-100"
+          : "border-red-300/30 bg-red-300/15 text-red-100"
+      }`}
+    >
+      {state.message}
     </div>
   );
 }

@@ -24,7 +24,9 @@ export async function setRegistrationStatus(registrationId: string, status: "app
     return { ok: false };
   }
 
-  await supabase.from("registrations").update({ status }).eq("id", id);
+  const { error } = await supabase.from("registrations").update({ status }).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+
   if (registration?.event_id) revalidatePath(`/events/${registration.event_id}`);
   revalidatePath("/organizer-dashboard");
   return { ok: true };

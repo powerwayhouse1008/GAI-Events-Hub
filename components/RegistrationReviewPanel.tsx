@@ -42,7 +42,11 @@ function ParticipantRow({
   async function update(status: "approved" | "rejected") {
     setLoadingStatus(status);
     try {
-      await setRegistrationStatus(participant.id, status);
+      const result = await setRegistrationStatus(participant.id, status);
+      if (!result.ok) {
+        alert(result.message || "更新できませんでした。");
+        return;
+      }
       await onUpdated();
     } finally {
       setLoadingStatus(null);
