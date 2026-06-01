@@ -10,6 +10,11 @@ interface AnnouncementFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function autoGrowTextarea(element: HTMLTextAreaElement) {
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
+}
+
 export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: AnnouncementFormProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -53,8 +58,11 @@ export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: A
   }
 
   return createPortal(
-    <div className="fixed inset-0 grid place-items-center bg-black/60 p-4 sm:p-6" style={{ zIndex: 2147483647 }}>
-      <div className="flex max-h-[min(620px,calc(100dvh-2rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div
+      className="fixed inset-0 flex justify-center overflow-y-auto bg-black/60 p-4 [scrollbar-width:none] sm:p-6 [&::-webkit-scrollbar]:hidden"
+      style={{ zIndex: 2147483647 }}
+    >
+      <div className="my-auto w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <h3 className="text-xl font-bold">通知を送信</h3>
           <button
@@ -66,8 +74,8 @@ export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: A
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 px-6 pb-4">
             <div>
               <label className="label">
                 <span className="label-text font-bold">タイトル</span>
@@ -89,9 +97,15 @@ export function AnnouncementForm({ eventId, onSuccess, isOpen, onOpenChange }: A
               <textarea
                 placeholder="通知内容を入力"
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="textarea textarea-bordered max-h-36 min-h-28 w-full"
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  autoGrowTextarea(e.currentTarget);
+                }}
+                className="textarea textarea-bordered min-h-28 w-full resize-none overflow-hidden"
                 rows={4}
+                ref={(element) => {
+                  if (element) autoGrowTextarea(element);
+                }}
                 disabled={isLoading}
               />
             </div>

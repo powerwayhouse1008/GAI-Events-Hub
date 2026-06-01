@@ -165,6 +165,11 @@ function formatTimeRange(event: Event) {
   return end ? `${start} - ${end}` : start;
 }
 
+function autoGrowTextarea(element: HTMLTextAreaElement) {
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
+}
+
 function formatFileSize(bytes: number | null) {
   if (!bytes) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -591,8 +596,11 @@ function EventEngagementPanel({
       {profile && !isOrganizer && canEngage && !engagement.myCommentRestricted && (
         <div className="mt-5 grid gap-3">
           <textarea
-            className="min-h-28 resize-y rounded-[8px] border border-white/15 bg-black/20 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
-            onChange={(event) => setComment(event.target.value)}
+            className="min-h-28 resize-none overflow-hidden rounded-[8px] border border-white/15 bg-black/20 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
+            onChange={(event) => {
+              setComment(event.target.value);
+              autoGrowTextarea(event.currentTarget);
+            }}
             placeholder="コメントを書く"
             value={comment}
           />
@@ -812,9 +820,10 @@ function RegistrationAction({
             主催者へのメッセージ
           </label>
           <textarea
-            className="mt-3 min-h-28 w-full resize-y rounded-[8px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400 focus:border-yellow-400"
+            className="mt-3 min-h-28 w-full resize-none overflow-hidden rounded-[8px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-950 outline-none placeholder:text-slate-400 focus:border-yellow-400"
             id="registration-message"
             name="message"
+            onInput={(event) => autoGrowTextarea(event.currentTarget)}
             placeholder="参加目的や主催者への連絡事項を入力してください"
           />
           <RegistrationNotice state={registrationState} />

@@ -31,6 +31,11 @@ function timePart(value?: string | null) {
   return value.slice(11, 16);
 }
 
+function autoGrowTextarea(element: HTMLTextAreaElement) {
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
+}
+
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
@@ -142,10 +147,14 @@ export function EventForm({ event }: EventFormProps) {
         </div>
 
         <textarea
-          className="min-h-32 w-full resize-y whitespace-pre-wrap bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
+          className="min-h-32 w-full resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
           name="title"
           placeholder="イベント名"
           defaultValue={event?.title || ""}
+          onInput={(e) => autoGrowTextarea(e.currentTarget)}
+          ref={(element) => {
+            if (element) autoGrowTextarea(element);
+          }}
           required
         />
 
@@ -167,9 +176,27 @@ export function EventForm({ event }: EventFormProps) {
           </div>
         </div>
 
-        <textarea className="input min-h-24 resize-y whitespace-pre-wrap" name="location" placeholder="会場または住所" defaultValue={event?.location || ""} />
+        <textarea
+          className="input min-h-24 resize-none overflow-hidden whitespace-pre-wrap"
+          name="location"
+          placeholder="会場または住所"
+          defaultValue={event?.location || ""}
+          onInput={(e) => autoGrowTextarea(e.currentTarget)}
+          ref={(element) => {
+            if (element) autoGrowTextarea(element);
+          }}
+        />
         <input className="input" name="online_url" placeholder="オンラインURL" defaultValue={event?.online_url || ""} />
-        <textarea className="input min-h-32" name="description" placeholder="説明を追加" defaultValue={event?.description || ""} />
+        <textarea
+          className="input min-h-32 resize-none overflow-hidden whitespace-pre-wrap"
+          name="description"
+          placeholder="説明を追加"
+          defaultValue={event?.description || ""}
+          onInput={(e) => autoGrowTextarea(e.currentTarget)}
+          ref={(element) => {
+            if (element) autoGrowTextarea(element);
+          }}
+        />
 
         <div className="grid gap-4 md:grid-cols-2">
           <input className="input" name="organizer_name" placeholder="主催者名" defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
