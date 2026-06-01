@@ -14,6 +14,7 @@ import {
   FileText,
   Image as ImageIcon,
   MapPin,
+  MessageSquare,
   Sparkles,
   Ticket,
   Users
@@ -177,6 +178,7 @@ export function EventDetailClient({
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [documents, setDocuments] = useState(initialDocuments);
   const [participants, setParticipants] = useState(initialParticipants);
+  const [showManualMessage, setShowManualMessage] = useState(false);
   const theme = getTheme(event);
   const isManualReview = event.approval_mode === "manual";
   const approvedCount = participants.filter((participant: any) => participant.status === "approved").length;
@@ -191,7 +193,7 @@ export function EventDetailClient({
         <div className={`absolute inset-0 bg-gradient-to-br ${theme.soft}`} />
         <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(6,19,25,.96),rgba(9,22,34,.88)_45%,rgba(7,11,24,.96)),radial-gradient(circle_at_84%_14%,rgba(56,189,248,.18),transparent_30%)]" />
 
-        <div className="relative mx-auto max-w-[1480px] px-4 pb-28 pt-8 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-[1480px] px-4 pb-16 pt-8 sm:px-6 lg:px-8">
           {isOrganizer && (
             <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border ${theme.border} bg-white/[0.08] p-4 shadow-xl ${theme.glow} backdrop-blur`}>
               <p className="text-sm font-bold text-slate-200">
@@ -234,6 +236,17 @@ export function EventDetailClient({
                       {event.online_url}
                     </a>
                   )}
+
+                  <RegistrationAction
+                    event={event}
+                    profile={profile}
+                    isOrganizer={isOrganizer}
+                    isManualReview={isManualReview}
+                    registerEventAction={registerEventAction}
+                    showManualMessage={showManualMessage}
+                    setShowManualMessage={setShowManualMessage}
+                    theme={theme}
+                  />
                 </aside>
               </div>
 
@@ -284,8 +297,6 @@ export function EventDetailClient({
           </div>
         </div>
       </section>
-
-      <FloatingAction event={event} profile={profile} isOrganizer={isOrganizer} isManualReview={isManualReview} registerEventAction={registerEventAction} theme={theme} />
     </main>
   );
 }
@@ -365,33 +376,41 @@ function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]
       </div>
 
       <div className="grid gap-6">
-        {documents.map((doc) => (
-          <article key={doc.id} className={`relative overflow-hidden rounded-[8px] border ${theme.border} bg-white/[0.06] shadow-xl ${theme.glow}`}>
-            <DocumentMedia doc={doc} />
-            <div className="border-t border-white/10 bg-black/25 p-5 pr-28 backdrop-blur">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className={`mt-1 ${theme.badge}`}>
-                  <FileKindIcon fileType={doc.file_type} />
-                </span>
-                <div className="min-w-0">
-                  <h3 className="break-words text-xl font-black">{doc.title}</h3>
-                  <p className="mt-1 text-xs font-bold text-slate-400">
-                    {[formatFileSize(doc.file_size), new Date(doc.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })].filter(Boolean).join(" / ")}
-                  </p>
+        {documents.map((doc) => {
+          const isImage = getFileKind(doc.file_type) === "image";
+
+          return (
+            <article key={doc.id} className={`relative overflow-hidden rounded-[8px] border ${theme.border} bg-black/25 shadow-xl ${theme.glow}`}>
+              <DocumentMedia doc={doc} />
+
+              {!isImage && (
+                <div className="border-t border-white/10 bg-black/25 p-5 pr-28 backdrop-blur">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className={`mt-1 ${theme.badge}`}>
+                      <FileKindIcon fileType={doc.file_type} />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="break-words text-xl font-black">{doc.title}</h3>
+                      <p className="mt-1 text-xs font-bold text-slate-400">
+                        {[formatFileSize(doc.file_size), new Date(doc.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })].filter(Boolean).join(" / ")}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <a
-              href={doc.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-4 py-3 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25"
-            >
-              <Download className="h-4 w-4" />
-              開く
-            </a>
-          </article>
-        ))}
+              )}
+
+              <a
+                href={doc.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/25 px-3 py-2 text-xs font-black text-white shadow-xl backdrop-blur transition hover:bg-white/20"
+              >
+                <Download className="h-3.5 w-3.5" />
+                開く
+              </a>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -402,9 +421,9 @@ function DocumentMedia({ doc }: { doc: EventDocument }) {
 
   if (kind === "image") {
     return (
-      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block bg-black/30">
+      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block bg-black">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={doc.file_url} alt={doc.title} className="max-h-[760px] w-full object-contain" />
+        <img src={doc.file_url} alt="" className="block max-h-[760px] w-full object-contain" />
       </a>
     );
   }
@@ -433,12 +452,14 @@ function DocumentMedia({ doc }: { doc: EventDocument }) {
   );
 }
 
-function FloatingAction({
+function RegistrationAction({
   event,
   profile,
   isOrganizer,
   isManualReview,
   registerEventAction,
+  showManualMessage,
+  setShowManualMessage,
   theme
 }: {
   event: Event;
@@ -446,13 +467,15 @@ function FloatingAction({
   isOrganizer: boolean;
   isManualReview: boolean;
   registerEventAction: (formData: FormData) => Promise<void>;
+  showManualMessage: boolean;
+  setShowManualMessage: (value: boolean) => void;
   theme: ReturnType<typeof getTheme>;
 }) {
   if (isOrganizer) return null;
 
   if (event.status !== "published") {
     return (
-      <div className="fixed bottom-5 right-5 z-30 max-w-[calc(100vw-2.5rem)] rounded-full border border-amber-300/30 bg-amber-300/15 px-5 py-3 text-sm font-black text-amber-100 shadow-2xl backdrop-blur">
+      <div className="mt-6 rounded-[8px] border border-amber-300/30 bg-amber-300/15 p-4 text-sm font-black text-amber-100">
         承認後に参加できます
       </div>
     );
@@ -460,19 +483,57 @@ function FloatingAction({
 
   if (!profile) {
     return (
-      <Link className={`fixed bottom-5 right-5 z-30 max-w-[calc(100vw-2.5rem)] rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-2xl backdrop-blur transition hover:bg-white/25`} href={`/login?redirectTo=/events/${event.id}`}>
+      <Link className={`mt-6 inline-flex w-full items-center justify-center rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`} href={`/login?redirectTo=/events/${event.id}`}>
         ログインして参加
       </Link>
     );
   }
 
+  if (!isManualReview) {
+    return (
+      <form action={registerEventAction} className="mt-6">
+        <input type="hidden" name="event_id" value={event.id} />
+        <button className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`} type="submit">
+          参加申込
+        </button>
+      </form>
+    );
+  }
+
   return (
-    <form action={registerEventAction} className="fixed bottom-5 right-5 z-30">
-      <input type="hidden" name="event_id" value={event.id} />
-      <button className={`rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-2xl backdrop-blur transition hover:bg-white/25`} type="submit">
-        {isManualReview ? "参加申込・承認待ち" : "参加申込"}
-      </button>
-    </form>
+    <div className="mt-6">
+      {!showManualMessage ? (
+        <button
+          className={`w-full rounded-full border ${theme.border} bg-white/15 px-6 py-4 text-sm font-black text-white shadow-xl backdrop-blur transition hover:bg-white/25`}
+          onClick={() => setShowManualMessage(true)}
+          type="button"
+        >
+          参加申込
+        </button>
+      ) : (
+        <form action={registerEventAction} className={`rounded-[8px] border ${theme.border} bg-black/20 p-4 shadow-xl backdrop-blur`}>
+          <input type="hidden" name="event_id" value={event.id} />
+          <label className="flex items-center gap-2 text-sm font-black text-slate-100" htmlFor="registration-message">
+            <MessageSquare className="h-4 w-4" />
+            主催者へのメッセージ
+          </label>
+          <textarea
+            className="mt-3 min-h-28 w-full resize-y rounded-[8px] border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-400 focus:border-white/35"
+            id="registration-message"
+            name="message"
+            placeholder="参加目的や主催者への連絡事項を入力してください"
+          />
+          <div className="mt-3 flex gap-2">
+            <button className={`min-w-0 flex-1 rounded-full border ${theme.border} bg-white/15 px-4 py-3 text-sm font-black text-white transition hover:bg-white/25`} type="submit">
+              送信
+            </button>
+            <button className="rounded-full border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-slate-200 transition hover:bg-white/20" onClick={() => setShowManualMessage(false)} type="button">
+              閉じる
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 
