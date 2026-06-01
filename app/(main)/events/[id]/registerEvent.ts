@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/auth";
+import { sendRegistrationStatusEmail } from "@/lib/event-email-notifications";
 
 export type RegisterEventResult = {
   ok: boolean;
@@ -110,6 +111,7 @@ export async function registerEvent(formData: FormData) {
   }
 
   const status = event.approval_mode === "auto" ? "approved" : "pending";
+  let savedRegistrationId: string | null = null;
   const { data: existing, error: existingError } = await supabase
     .from("registrations")
     .select("id")
@@ -125,6 +127,7 @@ export async function registerEvent(formData: FormData) {
   }
 
   if (existing) {
+    savedRegistrationId = existing.id;
     const { error: updateError } = await supabase
       .from("registrations")
       .update({ message, status })
@@ -137,12 +140,16 @@ export async function registerEvent(formData: FormData) {
       } satisfies RegisterEventResult;
     }
   } else {
-    const { error: insertError } = await supabase.from("registrations").insert({
-      event_id: eventId,
-      user_id: user.id,
-      message,
-      status
-    });
+    const { data: insertedRegistration, error: insertError } = await supabase
+      .from("registrations")
+      .insert({
+        event_id: eventId,
+        user_id: user.id,
+        message,
+        status
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       return {
@@ -150,6 +157,12 @@ export async function registerEvent(formData: FormData) {
         message: `参加申込を保存できませんでした: ${insertError.message}`
       } satisfies RegisterEventResult;
     }
+
+    savedRegistrationId = insertedRegistration?.id || null;
+  }
+
+  if (status === "approved" && savedRegistrationId) {
+    await sendRegistrationStatusEmail(savedRegistrationId, "approved");
   }
 
   revalidatePath(`/events/${eventId}`);

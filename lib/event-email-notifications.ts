@@ -15,15 +15,35 @@ async function getProfileEmails(userIds: string[]) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("email")
+    .select("id, email")
     .in("id", userIds);
 
   if (error) {
     console.error("Could not load email recipients:", error.message);
-    return [];
   }
 
-  return [...new Set((data || []).map((profile) => profile.email).filter(Boolean) as string[])];
+  const emailsByUserId = new Map<string, string>();
+
+  for (const profile of data || []) {
+    if (profile.email) emailsByUserId.set(profile.id, profile.email);
+  }
+
+  const missingUserIds = userIds.filter((userId) => !emailsByUserId.has(userId));
+
+  await Promise.all(
+    missingUserIds.map(async (userId) => {
+      const { data: authData, error: authError } = await supabase.auth.admin.getUserById(userId);
+      if (authError) {
+        console.error("Could not load auth email recipient:", authError.message);
+        return;
+      }
+
+      const email = authData.user?.email;
+      if (email) emailsByUserId.set(userId, email);
+    })
+  );
+
+  return [...new Set([...emailsByUserId.values()].filter(Boolean))];
 }
 
 export async function sendEventEmailToUsers({
@@ -53,7 +73,10 @@ export async function sendEventEmailToUsers({
     </div>
   `;
 
-  await sendEmail({ to: emails, subject, text, html });
+  const result = await sendEmail({ to: emails, subject, text, html });
+  if (!result.ok) {
+    console.error("Could not send event email notification:", result.message);
+  }
 }
 
 export async function sendRegistrationStatusEmail(registrationId: string, status: "approved" | "rejected") {

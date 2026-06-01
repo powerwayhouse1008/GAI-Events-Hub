@@ -50,8 +50,8 @@ export function AnnouncementForm({ eventId, onSuccess }: AnnouncementFormProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-[2147483647] flex items-start justify-center overflow-y-auto bg-black/70 p-4 sm:p-6">
-      <div className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)]">
+    <div className="fixed inset-0 z-[2147483647] flex items-center justify-center overflow-y-auto bg-black/60 p-4 sm:p-6">
+      <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)]">
         <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-6">
           <h3 className="text-xl font-bold">通知を送信</h3>
           <button
