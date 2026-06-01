@@ -69,11 +69,14 @@ export async function saveEvent(input: SaveEventInput) {
   }
 
   let organizerId = profile.id;
+  let existingStatus: string | null = null;
+  let existingTitle: string | null = null;
+  let existingCoverUrl: string | null = null;
 
   if (input.eventId) {
     const { data: existingEvent, error: fetchError } = await supabase
       .from("events")
-      .select("organizer_id")
+      .select("organizer_id, status, title, cover_url")
       .eq("id", input.eventId)
       .single();
 
@@ -86,7 +89,16 @@ export async function saveEvent(input: SaveEventInput) {
     }
 
     organizerId = existingEvent.organizer_id;
+    existingStatus = existingEvent.status;
+    existingTitle = existingEvent.title;
+    existingCoverUrl = existingEvent.cover_url;
   }
+
+  const needsAdminReview =
+    !input.eventId ||
+    existingStatus !== "published" ||
+    input.title !== (existingTitle || "") ||
+    input.coverUrl !== (existingCoverUrl || null);
 
   const payload = {
     title: input.title,
@@ -104,7 +116,7 @@ export async function saveEvent(input: SaveEventInput) {
     capacity: input.capacity,
     ticket_price: input.ticketPrice,
     approval_mode: input.approvalMode,
-    status: "pending",
+    status: needsAdminReview ? "pending" : existingStatus,
     featured: input.featured
   };
 

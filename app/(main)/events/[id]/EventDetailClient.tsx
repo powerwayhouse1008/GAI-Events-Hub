@@ -876,7 +876,7 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
       <span className="mt-0.5 text-cyan-200">{icon}</span>
       <div>
         <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-        <p className="mt-1 font-bold text-white">{value}</p>
+        <p className="mt-1 whitespace-pre-wrap break-words font-bold text-white">{value}</p>
       </div>
     </div>
   );

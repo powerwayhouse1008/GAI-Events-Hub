@@ -167,7 +167,7 @@ export function EventForm({ event }: EventFormProps) {
           </div>
         </div>
 
-        <input className="input" name="location" placeholder="会場または住所" defaultValue={event?.location || ""} />
+        <textarea className="input min-h-24 resize-y whitespace-pre-wrap" name="location" placeholder="会場または住所" defaultValue={event?.location || ""} />
         <input className="input" name="online_url" placeholder="オンラインURL" defaultValue={event?.online_url || ""} />
         <textarea className="input min-h-32" name="description" placeholder="説明を追加" defaultValue={event?.description || ""} />
 
