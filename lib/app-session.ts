@@ -52,13 +52,13 @@ export function setAppSessionCookie(response: Response, userId: string) {
   const value = createAppSessionValue(userId);
   headers.append(
     "Set-Cookie",
-    `${COOKIE_NAME}=${value}; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax; Secure; HttpOnly`
+    `${COOKIE_NAME}=${value}; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax; HttpOnly`
   );
 }
 
 export function clearAppSessionCookie(response: Response) {
   response.headers.append(
     "Set-Cookie",
-    `${COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax; Secure; HttpOnly`
+    `${COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly`
   );
 }

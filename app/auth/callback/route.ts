@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAppSessionCookie } from "@/lib/app-session";
 
 function getSafePath(path: string | null, fallback = "/events") {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return fallback;
@@ -36,33 +37,32 @@ export async function GET(request: Request) {
     return NextResponse.redirect(url);
   }
 
-  if (requestedRole === "organizer") {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-    if (user) {
-      const admin = createAdminClient();
-      await admin.from("profiles").upsert(
-        {
-          id: user.id,
-          email: user.email,
-          display_name:
-            user.user_metadata?.display_name ||
-            user.user_metadata?.full_name ||
-            user.email?.split("@")[0] ||
-            "User",
-          avatar_url: user.user_metadata?.avatar_url || null,
-          company_name: user.user_metadata?.company_name || null,
-          organizer_status: "approved",
-          role: "organizer"
-        },
-        { onConflict: "id" }
-      );
-    }
-
-    return NextResponse.redirect(new URL("/events", requestUrl.origin));
+  if (user) {
+    const admin = createAdminClient();
+    const isOrganizer = requestedRole === "organizer";
+    await admin.from("profiles").upsert(
+      {
+        id: user.id,
+        email: user.email,
+        display_name:
+          user.user_metadata?.display_name ||
+          user.user_metadata?.full_name ||
+          user.email?.split("@")[0] ||
+          "User",
+        avatar_url: user.user_metadata?.avatar_url || null,
+        company_name: user.user_metadata?.company_name || null,
+        organizer_status: isOrganizer ? "approved" : "none",
+        role: isOrganizer ? "organizer" : "member"
+      },
+      { onConflict: "id" }
+    );
   }
 
-  return NextResponse.redirect(new URL(next, requestUrl.origin));
+  const response = NextResponse.redirect(new URL(requestedRole === "organizer" ? "/events" : next, requestUrl.origin));
+  if (user) setAppSessionCookie(response, user.id);
+  return response;
 }
