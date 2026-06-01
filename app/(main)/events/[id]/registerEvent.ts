@@ -10,6 +10,71 @@ export type RegisterEventResult = {
   status?: "pending" | "approved" | "rejected";
 };
 
+type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
+
+function profilePayload(user: Awaited<ReturnType<typeof requireUser>>) {
+  return {
+    id: user.id,
+    email: user.email,
+    display_name:
+      user.user_metadata?.display_name ||
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "User",
+    avatar_url: user.user_metadata?.avatar_url || null,
+    company_name: user.user_metadata?.company_name || null
+  };
+}
+
+async function ensureParticipantProfile(
+  supabase: SupabaseAdminClient,
+  user: Awaited<ReturnType<typeof requireUser>>
+) {
+  const payload = profilePayload(user);
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (lookupError) return lookupError;
+
+  if (existing) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        email: payload.email,
+        display_name: payload.display_name,
+        avatar_url: payload.avatar_url,
+        company_name: payload.company_name
+      })
+      .eq("id", user.id);
+    return error;
+  }
+
+  const { error: defaultInsertError } = await supabase.from("profiles").insert(payload);
+  if (!defaultInsertError) return null;
+
+  // Some deployed databases still have an older role check constraint whose
+  // accepted participant value is not "member". Try common legacy values.
+  const roleCandidates = ["member", "user", "participant", "attendee"];
+  let lastError = defaultInsertError;
+
+  for (const role of roleCandidates) {
+    const { error } = await supabase.from("profiles").insert({
+      ...payload,
+      role,
+      organizer_status: "none"
+    });
+
+    if (!error) return null;
+    lastError = error;
+  }
+
+  return lastError;
+}
+
 export async function registerEvent(formData: FormData) {
   const user = await requireUser();
   const supabase = createAdminClient();
@@ -35,20 +100,7 @@ export async function registerEvent(formData: FormData) {
     return { ok: false, message: "このイベントはまだ参加申込できません。" } satisfies RegisterEventResult;
   }
 
-  const { error: profileError } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      email: user.email,
-      display_name:
-        user.user_metadata?.display_name ||
-        user.user_metadata?.full_name ||
-        user.email?.split("@")[0] ||
-        "User",
-      avatar_url: user.user_metadata?.avatar_url || null,
-      company_name: user.user_metadata?.company_name || null
-    },
-    { onConflict: "id" }
-  );
+  const profileError = await ensureParticipantProfile(supabase, user);
 
   if (profileError) {
     return {

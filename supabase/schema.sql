@@ -83,6 +83,16 @@ alter table public.profiles
 alter table public.profiles
   drop constraint if exists profiles_email_key;
 
+alter table public.profiles
+  drop constraint if exists profiles_role_check,
+  drop constraint if exists profiles_organizer_status_check;
+
+alter table public.profiles
+  add constraint profiles_role_check
+    check (role in ('member','organizer','admin')),
+  add constraint profiles_organizer_status_check
+    check (organizer_status in ('none','pending','approved','rejected'));
+
 alter table public.events
   add column if not exists organizer_name text,
   add column if not exists category text,
