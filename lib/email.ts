@@ -20,6 +20,21 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
+function normalizeFrom(value: string | undefined) {
+  if (!value) return "";
+  let from = value.trim();
+
+  while (
+    (from.startsWith('"') && from.endsWith('"')) ||
+    (from.startsWith("'") && from.endsWith("'")) ||
+    (from.startsWith('\\"') && from.endsWith('\\"'))
+  ) {
+    from = from.replace(/^\\?["']|\\?["']$/g, "").trim();
+  }
+
+  return from;
+}
+
 export function textToHtml(value: string) {
   return escapeHtml(value).replace(/\n/g, "<br />");
 }
@@ -27,7 +42,7 @@ export function textToHtml(value: string) {
 export async function sendEmail({ to, subject, text, html }: SendEmailInput) {
   const recipients = getRecipients(to);
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const from = normalizeFrom(process.env.EMAIL_FROM);
 
   if (!recipients.length) return { ok: true, skipped: true };
 

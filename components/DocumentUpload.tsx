@@ -60,7 +60,7 @@ export function DocumentUpload({ eventId, onSuccess, isOpen, onOpenChange }: Doc
 
   if (!isOpen) {
     return (
-      <button onClick={() => onOpenChange(true)} className="btn btn-secondary gap-2" type="button">
+      <button onClick={() => onOpenChange(true)} className="btn btn-secondary gap-2 text-white" type="button">
         <Upload className="h-4 w-4" />
         ファイルをアップロード
       </button>

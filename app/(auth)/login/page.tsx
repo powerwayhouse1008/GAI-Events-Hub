@@ -7,9 +7,22 @@ import { LoginForm } from "./LoginForm";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function LoginPage() {
+function getSafeRedirect(path: string | string[] | undefined) {
+  const value = Array.isArray(path) ? path[0] : path;
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/events";
+  if (value.startsWith("/login") || value.startsWith("/register")) return "/events";
+  return value;
+}
+
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ redirectTo?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const redirectTo = getSafeRedirect(params?.redirectTo);
   const user = await getCurrentUser();
-  if (user) redirect("/events");
+  if (user) redirect(redirectTo);
 
   return (
     <main className="grid min-h-screen grid-cols-1 bg-[radial-gradient(circle_at_top_left,rgba(154,78,186,.22),transparent_34%),linear-gradient(135deg,#fbf7ff,#f7ecfb_55%,#ffffff)] p-6 lg:grid-cols-[1fr_460px] lg:p-16">
