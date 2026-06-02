@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, requireUser } from "@/lib/auth";
+import { sendCommentNotificationEmail } from "@/lib/event-email-notifications";
 import { notifyEventParticipants } from "@/lib/event-notifications";
 import type { Announcement, EventComment, EventDocument } from "@/lib/types";
 
@@ -311,7 +312,11 @@ export async function createEventComment(eventId: string, content: string) {
     content: text
   });
 
-  return error ? { ok: false, message: error.message } : { ok: true };
+  if (error) return { ok: false, message: error.message };
+
+  await sendCommentNotificationEmail(eventId, user.id, text);
+
+  return { ok: true };
 }
 
 export async function hideEventComment(commentId: string, eventId: string) {

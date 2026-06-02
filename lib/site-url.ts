@@ -3,5 +3,7 @@ export function getSiteUrl() {
     return window.location.origin;
   }
 
-  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "";
+  if (configuredUrl && !configuredUrl.includes(".vercel.app")) return configuredUrl;
+  return "https://www.gaia2016.com";
 }

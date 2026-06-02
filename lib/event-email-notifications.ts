@@ -1,8 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, textToHtml } from "@/lib/email";
 
+const CANONICAL_SITE_URL = "https://www.gaia2016.com";
+
 function getSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const configuredUrl = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "").replace(/\/$/, "");
+  if (!configuredUrl) return CANONICAL_SITE_URL;
+  if (configuredUrl.includes(".vercel.app")) return CANONICAL_SITE_URL;
+  return configuredUrl;
 }
 
 function getEventUrl(eventId: string) {
@@ -107,6 +112,36 @@ export async function sendRegistrationStatusEmail(registrationId: string, status
     userIds: [data.user_id],
     eventId: data.event_id,
     subject,
+    message
+  });
+}
+
+export async function sendCommentNotificationEmail(eventId: string, commenterId: string, comment: string) {
+  const supabase = createAdminClient();
+  const [{ data: event, error: eventError }, { data: commenter, error: commenterError }] = await Promise.all([
+    supabase.from("events").select("id, title, organizer_id").eq("id", eventId).single(),
+    supabase.from("profiles").select("display_name, email").eq("id", commenterId).maybeSingle()
+  ]);
+
+  if (eventError || !event) {
+    if (eventError) console.error("Could not load event for comment email:", eventError.message);
+    return;
+  }
+
+  if (event.organizer_id === commenterId) return;
+
+  if (commenterError) {
+    console.error("Could not load commenter profile for email:", commenterError.message);
+  }
+
+  const commenterName = commenter?.display_name || commenter?.email || "A participant";
+  const eventTitle = event.title || "Event";
+  const message = `${commenterName} commented on your event "${eventTitle}".\n\nComment:\n${comment}`;
+
+  await sendEventEmailToUsers({
+    userIds: [event.organizer_id],
+    eventId,
+    subject: `New comment on your event: ${eventTitle}`,
     message
   });
 }
