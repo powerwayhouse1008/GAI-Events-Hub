@@ -1,11 +1,11 @@
 "use client";
 
-import { Check, ImagePlus } from "lucide-react";
+import { Check, ImagePlus, WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Event } from "@/lib/types";
-import { saveEvent } from "./eventActions";
+import { generateEventCover, saveEvent } from "./eventActions";
 
 type EventFormProps = {
   event?: Event;
@@ -56,11 +56,45 @@ function getTokyoDateInputValue(date = new Date()) {
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
+  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(event?.cover_url || null);
   const [selectedTheme, setSelectedTheme] = useState(event?.theme_color || "purple");
   const isEditing = Boolean(event);
   const minStartDate = getTokyoDateInputValue();
+
+  async function createAiCover() {
+    if (!formRef.current) return;
+
+    setGeneratingCover(true);
+
+    const formData = new FormData(formRef.current);
+    const result = await generateEventCover({
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || ""),
+      category: String(formData.get("category") || "AI"),
+      region: String(formData.get("region") || "Online"),
+      location: String(formData.get("location") || ""),
+      themeColor: String(formData.get("theme_color") || selectedTheme || "purple")
+    });
+
+    if (result.error) {
+      alert(result.error);
+      setGeneratingCover(false);
+      return;
+    }
+
+    if (result.coverUrl) {
+      setGeneratedCoverUrl(result.coverUrl);
+      setCoverPreview(result.coverUrl);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+
+    setGeneratingCover(false);
+  }
 
   async function submit(formData: FormData) {
     setLoading(true);
@@ -98,7 +132,7 @@ export function EventForm({ event }: EventFormProps) {
       return;
     }
 
-    let coverUrl: string | null = event?.cover_url || null;
+    let coverUrl: string | null = generatedCoverUrl || event?.cover_url || null;
     const file = formData.get("cover") as File | null;
 
     if (file && file.size > 0) {
@@ -148,7 +182,7 @@ export function EventForm({ event }: EventFormProps) {
   }
 
   return (
-    <form action={submit} className="mt-10 grid gap-8 lg:grid-cols-[500px_1fr]">
+    <form ref={formRef} action={submit} className="mt-10 grid gap-8 lg:grid-cols-[500px_1fr]">
       <section>
         <label className="block cursor-pointer overflow-hidden rounded-[28px] border border-purple-100 bg-white p-5 shadow-sm">
           <div className="grid h-[500px] place-items-center rounded-[22px] bg-gradient-to-br from-blue-950 via-sky-500 to-fuchsia-300 text-7xl font-black text-white">
@@ -163,17 +197,36 @@ export function EventForm({ event }: EventFormProps) {
             )}
           </div>
           <input
+            ref={coverInputRef}
             type="file"
             name="cover"
             accept="image/*"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) setCoverPreview(URL.createObjectURL(file));
+              if (file) {
+                setGeneratedCoverUrl(null);
+                setCoverPreview(URL.createObjectURL(file));
+              }
             }}
           />
           <p className="mt-4 text-center font-bold text-purple-700">イベント画像をアップロード</p>
         </label>
+        <button
+          className="btn mt-4 w-full border border-purple-200 bg-white text-purple-700 hover:bg-purple-50"
+          disabled={loading || generatingCover}
+          type="button"
+          onClick={createAiCover}
+        >
+          {generatingCover ? (
+            <span className="loading-dots" aria-label="Dang tao anh" />
+          ) : (
+            <>
+              <WandSparkles size={20} />
+              Tao anh AI theo chu de
+            </>
+          )}
+        </button>
       </section>
 
       <section className="grid gap-5 rounded-[28px] border border-purple-100 bg-white/45 p-7 shadow-sm backdrop-blur">
@@ -288,7 +341,7 @@ export function EventForm({ event }: EventFormProps) {
           </div>
         </fieldset>
 
-        <button disabled={loading} className="btn btn-primary w-full text-lg" type="submit">
+        <button disabled={loading || generatingCover} className="btn btn-primary w-full text-lg" type="submit">
           {loading ? <span className="loading-dots" aria-label="保存中" /> : isEditing ? "イベントを更新して承認申請" : "イベント作成"}
         </button>
       </section>

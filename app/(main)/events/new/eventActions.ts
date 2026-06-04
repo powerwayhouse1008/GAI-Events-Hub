@@ -24,10 +24,119 @@ type SaveEventInput = {
   featured: boolean;
 };
 
+type GenerateEventCoverInput = {
+  title: string;
+  description: string;
+  category: string;
+  region: string;
+  location: string;
+  themeColor: string;
+};
+
 function floorToMinute(date: Date) {
   const nextDate = new Date(date);
   nextDate.setSeconds(0, 0);
   return nextDate;
+}
+
+function buildCoverPrompt(input: GenerateEventCoverInput) {
+  const themeHints: Record<string, string> = {
+    purple: "violet and magenta futuristic lighting",
+    blue: "deep blue and cyan technology lighting",
+    green: "emerald and teal innovation lighting",
+    amber: "warm amber and orange business conference lighting",
+    rose: "rose and pink neon creative lighting"
+  };
+
+  return [
+    "Create a premium landscape event cover image for a professional Global AI Industry Alliance event.",
+    "Use a polished conference visual style with cinematic depth, modern technology details, and space for overlaid event text.",
+    "Do not include readable words, logos, watermarks, distorted text, or UI screenshots.",
+    `Event title: ${input.title || "AI industry event"}.`,
+    `Event category/theme: ${input.category || "AI"}.`,
+    input.description ? `Event description: ${input.description.slice(0, 900)}.` : "",
+    input.location ? `Venue or location context: ${input.location}.` : "",
+    input.region ? `Region: ${input.region}.` : "",
+    `Color direction: ${themeHints[input.themeColor] || themeHints.purple}.`,
+    "Aspect ratio: 3:2 landscape, suitable as an event thumbnail and hero cover."
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function readImageBase64(responseJson: unknown) {
+  if (
+    typeof responseJson === "object" &&
+    responseJson !== null &&
+    "data" in responseJson &&
+    Array.isArray((responseJson as { data?: unknown }).data)
+  ) {
+    const firstImage = (responseJson as { data: Array<{ b64_json?: unknown }> }).data[0];
+    return typeof firstImage?.b64_json === "string" ? firstImage.b64_json : null;
+  }
+
+  return null;
+}
+
+export async function generateEventCover(input: GenerateEventCoverInput) {
+  const profile = await requireOrganizer();
+  const supabase = createAdminClient();
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    return { error: "Thiếu OPENAI_API_KEY trong biến môi trường." };
+  }
+
+  if (!input.title.trim() && !input.description.trim()) {
+    return { error: "Vui lòng nhập tên hoặc mô tả sự kiện trước khi tạo ảnh." };
+  }
+
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5",
+      prompt: buildCoverPrompt(input),
+      n: 1,
+      size: "1536x1024",
+      quality: "medium"
+    })
+  });
+
+  const responseJson = (await response.json().catch(() => null)) as unknown;
+
+  if (!response.ok) {
+    const message =
+      typeof responseJson === "object" &&
+      responseJson !== null &&
+      "error" in responseJson &&
+      typeof (responseJson as { error?: { message?: unknown } }).error?.message === "string"
+        ? (responseJson as { error: { message: string } }).error.message
+        : "Không thể tạo ảnh đại diện bằng AI.";
+
+    return { error: message };
+  }
+
+  const imageBase64 = readImageBase64(responseJson);
+  if (!imageBase64) {
+    return { error: "OpenAI không trả về dữ liệu ảnh hợp lệ." };
+  }
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+  const path = `${profile.id}/generated-${Date.now()}.png`;
+  const { error: uploadError } = await supabase.storage.from("event-covers").upload(path, imageBuffer, {
+    contentType: "image/png"
+  });
+
+  if (uploadError) {
+    return { error: `Không thể lưu ảnh vào Supabase Storage. ${uploadError.message}` };
+  }
+
+  const { data } = supabase.storage.from("event-covers").getPublicUrl(path);
+  return { coverUrl: data.publicUrl };
 }
 
 async function ensureOrganizerProfile(profile: Profile) {
