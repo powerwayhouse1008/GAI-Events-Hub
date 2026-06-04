@@ -1,5 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { ProfileForm } from "./ProfileForm";
 
 export default async function MePage() {
   const profile = await requireProfile();
@@ -21,10 +22,7 @@ export default async function MePage() {
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
       <h1 className="text-5xl font-black tracking-tight">My Page</h1>
-      <section className="card mt-8 p-7">
-        <h2 className="text-2xl font-black">{profile.display_name || profile.email}</h2>
-        <p className="mt-2 text-slate-500">Role: {profile.role} / Organizer: {profile.organizer_status}</p>
-      </section>
+      <ProfileForm profile={profile} />
 
       <section className="card mt-8 p-7">
         <h2 className="text-3xl font-black">Notifications</h2>

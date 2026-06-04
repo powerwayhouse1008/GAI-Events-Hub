@@ -12,6 +12,8 @@ create table if not exists public.profiles (
   display_name text,
   avatar_url text,
   company_name text,
+  job_title text,
+  phone_number text,
   role text not null default 'member' check (role in ('member','organizer','admin')),
   organizer_status text not null default 'none' check (organizer_status in ('none','pending','approved','rejected')),
   created_at timestamptz not null default now()
@@ -120,6 +122,8 @@ alter table public.profiles
   add column if not exists display_name text,
   add column if not exists avatar_url text,
   add column if not exists company_name text,
+  add column if not exists job_title text,
+  add column if not exists phone_number text,
   add column if not exists role text not null default 'member',
   add column if not exists organizer_status text not null default 'none',
   add column if not exists deleted_at timestamptz,
@@ -660,7 +664,8 @@ using (organizer_id = auth.uid() or public.is_admin(auth.uid()));
 insert into storage.buckets (id, name, public)
 values
   ('event-covers', 'event-covers', true),
-  ('event-documents', 'event-documents', true)
+  ('event-documents', 'event-documents', true),
+  ('profile-avatars', 'profile-avatars', true)
 on conflict (id) do update set public = excluded.public;
 
 -- Event covers are public; authenticated users can upload/update/delete their files.
@@ -688,6 +693,32 @@ create policy "authenticated delete event covers"
 on storage.objects for delete
 to authenticated
 using (bucket_id = 'event-covers');
+
+-- Profile avatars are public; each user stores files under their own user id.
+drop policy if exists "public read profile avatars" on storage.objects;
+create policy "public read profile avatars"
+on storage.objects for select
+to public
+using (bucket_id = 'profile-avatars');
+
+drop policy if exists "users upload own profile avatars" on storage.objects;
+create policy "users upload own profile avatars"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'profile-avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "users update own profile avatars" on storage.objects;
+create policy "users update own profile avatars"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'profile-avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+with check (bucket_id = 'profile-avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "users delete own profile avatars" on storage.objects;
+create policy "users delete own profile avatars"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'profile-avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- The application stores document public URLs, so this bucket must be public too.
 drop policy if exists "authenticated read documents" on storage.objects;

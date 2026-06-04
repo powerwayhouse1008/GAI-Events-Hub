@@ -9,6 +9,8 @@ export type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   company_name: string | null;
+  job_title: string | null;
+  phone_number: string | null;
   role: UserRole;
   organizer_status: ApprovalStatus;
   deleted_at?: string | null;

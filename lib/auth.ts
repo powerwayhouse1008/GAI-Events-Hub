@@ -40,6 +40,8 @@ function profileFromUser(user: NonNullable<Awaited<ReturnType<typeof getCurrentU
       "User",
     avatar_url: user.user_metadata?.avatar_url || null,
     company_name: user.user_metadata?.company_name || null,
+    job_title: null,
+    phone_number: null,
     role: isConfiguredAdmin ? "admin" : isOrganizer ? "organizer" : "member",
     organizer_status: isConfiguredAdmin || isOrganizer ? "approved" : "none",
     created_at: user.created_at
@@ -57,6 +59,8 @@ async function upsertProfileWithServiceRole(profile: Profile) {
         display_name: profile.display_name,
         avatar_url: profile.avatar_url,
         company_name: profile.company_name,
+        job_title: profile.job_title,
+        phone_number: profile.phone_number,
         role: profile.role,
         organizer_status: profile.organizer_status
       },
