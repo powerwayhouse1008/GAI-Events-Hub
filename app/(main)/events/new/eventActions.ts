@@ -24,6 +24,12 @@ type SaveEventInput = {
   featured: boolean;
 };
 
+function floorToMinute(date: Date) {
+  const nextDate = new Date(date);
+  nextDate.setSeconds(0, 0);
+  return nextDate;
+}
+
 async function ensureOrganizerProfile(profile: Profile) {
   const supabase = createAdminClient();
   const email = profile.email || null;
@@ -62,6 +68,12 @@ async function ensureOrganizerProfile(profile: Profile) {
 export async function saveEvent(input: SaveEventInput) {
   const profile = await requireOrganizer();
   const supabase = createAdminClient();
+  const startsAt = new Date(input.startsAt);
+  const endsAt = new Date(input.endsAt);
+
+  if (Number.isNaN(endsAt.getTime()) || endsAt < startsAt) {
+    return { error: "終了日時は開始日時以降を選択してください。" };
+  }
 
   const profileError = await ensureOrganizerProfile(profile);
   if (profileError) {
@@ -72,11 +84,12 @@ export async function saveEvent(input: SaveEventInput) {
   let existingStatus: string | null = null;
   let existingTitle: string | null = null;
   let existingCoverUrl: string | null = null;
+  let existingStartsAt: string | null = null;
 
   if (input.eventId) {
     const { data: existingEvent, error: fetchError } = await supabase
       .from("events")
-      .select("organizer_id, status, title, cover_url")
+      .select("organizer_id, status, title, cover_url, starts_at")
       .eq("id", input.eventId)
       .single();
 
@@ -92,6 +105,15 @@ export async function saveEvent(input: SaveEventInput) {
     existingStatus = existingEvent.status;
     existingTitle = existingEvent.title;
     existingCoverUrl = existingEvent.cover_url;
+    existingStartsAt = existingEvent.starts_at;
+  }
+
+  const existingStartMinute = existingStartsAt ? floorToMinute(new Date(existingStartsAt)).getTime() : null;
+  const startsAtMinute = floorToMinute(startsAt).getTime();
+  const startChanged = existingStartMinute !== null && startsAtMinute !== existingStartMinute;
+
+  if (Number.isNaN(startsAt.getTime()) || ((!input.eventId || startChanged) && startsAt < floorToMinute(new Date()))) {
+    return { error: "開始日時は現在時刻以降を選択してください。過去のイベントは作成できません。" };
   }
 
   const needsAdminReview =

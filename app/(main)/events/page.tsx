@@ -382,7 +382,7 @@ export default async function EventsPage({
             <h2 className="text-4xl font-black">All Events</h2>
             <p className="mt-2 text-slate-400">すべてのAIイベントを確認できます。</p>
           </div>
-          <Link href="/events" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 font-bold text-slate-200 hover:bg-white/10">
+          <Link href="/events/all" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 font-bold text-slate-200 hover:bg-white/10">
             View All Events
           </Link>
         </div>

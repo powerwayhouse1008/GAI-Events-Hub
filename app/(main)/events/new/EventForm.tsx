@@ -36,6 +36,23 @@ function autoGrowTextarea(element: HTMLTextAreaElement) {
   element.style.height = `${element.scrollHeight}px`;
 }
 
+function floorToMinute(date: Date) {
+  const nextDate = new Date(date);
+  nextDate.setSeconds(0, 0);
+  return nextDate;
+}
+
+function getTokyoDateInputValue(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Tokyo"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
@@ -43,6 +60,7 @@ export function EventForm({ event }: EventFormProps) {
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
   const [selectedTheme, setSelectedTheme] = useState(event?.theme_color || "purple");
   const isEditing = Boolean(event);
+  const minStartDate = getTokyoDateInputValue();
 
   async function submit(formData: FormData) {
     setLoading(true);
@@ -53,6 +71,30 @@ export function EventForm({ event }: EventFormProps) {
 
     if (!user) {
       window.location.href = "/login";
+      return;
+    }
+
+    const startDate = String(formData.get("start_date") || "");
+    const startTime = String(formData.get("start_time") || "00:00");
+    const endDate = String(formData.get("end_date") || startDate);
+    const endTime = String(formData.get("end_time") || startTime || "00:00");
+    const startsAt = `${startDate}T${startTime}:00+09:00`;
+    const endsAt = `${endDate}T${endTime}:00+09:00`;
+    const startsAtDate = new Date(startsAt);
+    const endsAtDate = new Date(endsAt);
+
+    const originalStartMinute = event ? floorToMinute(new Date(event.starts_at)).getTime() : null;
+    const startChanged = originalStartMinute !== null && floorToMinute(startsAtDate).getTime() !== originalStartMinute;
+
+    if (Number.isNaN(startsAtDate.getTime()) || ((!event || startChanged) && startsAtDate < floorToMinute(new Date()))) {
+      alert("開始日時は現在時刻以降を選択してください。過去のイベントは作成できません。");
+      setLoading(false);
+      return;
+    }
+
+    if (Number.isNaN(endsAtDate.getTime()) || endsAtDate < startsAtDate) {
+      alert("終了日時は開始日時以降を選択してください。");
+      setLoading(false);
       return;
     }
 
@@ -73,13 +115,6 @@ export function EventForm({ event }: EventFormProps) {
       const { data } = supabase.storage.from("event-covers").getPublicUrl(path);
       coverUrl = data.publicUrl;
     }
-
-    const startDate = String(formData.get("start_date") || "");
-    const startTime = String(formData.get("start_time") || "00:00");
-    const endDate = String(formData.get("end_date") || startDate);
-    const endTime = String(formData.get("end_time") || startTime || "00:00");
-    const startsAt = `${startDate}T${startTime}:00+09:00`;
-    const endsAt = `${endDate}T${endTime}:00+09:00`;
 
     const payload = {
       eventId: event?.id,
@@ -164,7 +199,7 @@ export function EventForm({ event }: EventFormProps) {
             <span>終了</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <input className="input" name="start_date" type="date" defaultValue={datePart(event?.starts_at)} required />
+            <input className="input" name="start_date" type="date" min={event ? undefined : minStartDate} defaultValue={datePart(event?.starts_at)} required />
             <input className="input" name="start_time" type="time" defaultValue={timePart(event?.starts_at)} />
             <input className="input" name="end_date" type="date" defaultValue={datePart(event?.ends_at)} />
             <input className="input" name="end_time" type="time" defaultValue={timePart(event?.ends_at)} />
