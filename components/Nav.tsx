@@ -8,7 +8,7 @@ export async function Nav() {
   noStore();
 
   const profile = await getProfile();
-  const canCreateEvent = profile?.role === "admin" || profile?.role === "organizer";
+  const canCreateEvent = Boolean(profile);
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/50 bg-white/80 backdrop-blur-xl">

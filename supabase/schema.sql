@@ -443,10 +443,11 @@ to anon, authenticated
 using (status = 'published' or organizer_id = auth.uid() or public.is_admin(auth.uid()));
 
 drop policy if exists "approved organizers create events" on public.events;
-create policy "approved organizers create events"
+drop policy if exists "authenticated users create events" on public.events;
+create policy "authenticated users create events"
 on public.events for insert
 to authenticated
-with check (organizer_id = auth.uid() and public.is_approved_organizer(auth.uid()));
+with check (organizer_id = auth.uid());
 
 drop policy if exists "organizers update own events" on public.events;
 create policy "organizers update own events"

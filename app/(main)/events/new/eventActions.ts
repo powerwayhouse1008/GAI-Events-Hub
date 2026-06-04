@@ -100,6 +100,8 @@ export async function saveEvent(input: SaveEventInput) {
     input.title !== (existingTitle || "") ||
     input.coverUrl !== (existingCoverUrl || null);
 
+  const nextStatus = profile.role === "admin" ? "published" : needsAdminReview ? "pending" : existingStatus || "pending";
+
   const payload = {
     title: input.title,
     description: input.description,
@@ -116,7 +118,7 @@ export async function saveEvent(input: SaveEventInput) {
     capacity: input.capacity,
     ticket_price: input.ticketPrice,
     approval_mode: input.approvalMode,
-    status: needsAdminReview ? "pending" : existingStatus,
+    status: nextStatus,
     featured: input.featured
   };
 

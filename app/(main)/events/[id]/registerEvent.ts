@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/auth";
-import { sendRegistrationStatusEmail } from "@/lib/event-email-notifications";
+import { sendRegistrationStatusEmail, sendRegistrationSubmittedEmail } from "@/lib/event-email-notifications";
 
 export type RegisterEventResult = {
   ok: boolean;
@@ -112,9 +112,10 @@ export async function registerEvent(formData: FormData) {
 
   const status = event.approval_mode === "auto" ? "approved" : "pending";
   let savedRegistrationId: string | null = null;
+  let shouldNotifyOrganizer = false;
   const { data: existing, error: existingError } = await supabase
     .from("registrations")
-    .select("id")
+    .select("id, status")
     .eq("event_id", eventId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -128,6 +129,7 @@ export async function registerEvent(formData: FormData) {
 
   if (existing) {
     savedRegistrationId = existing.id;
+    shouldNotifyOrganizer = existing.status !== status;
     const { error: updateError } = await supabase
       .from("registrations")
       .update({ message, status })
@@ -159,10 +161,15 @@ export async function registerEvent(formData: FormData) {
     }
 
     savedRegistrationId = insertedRegistration?.id || null;
+    shouldNotifyOrganizer = true;
   }
 
-  if (status === "approved" && savedRegistrationId) {
+  if (status === "approved" && savedRegistrationId && shouldNotifyOrganizer) {
     await sendRegistrationStatusEmail(savedRegistrationId, "approved");
+  }
+
+  if (savedRegistrationId && shouldNotifyOrganizer) {
+    await sendRegistrationSubmittedEmail(savedRegistrationId);
   }
 
   revalidatePath(`/events/${eventId}`);

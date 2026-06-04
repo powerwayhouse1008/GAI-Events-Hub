@@ -141,8 +141,5 @@ export async function requireAdmin() {
 
 export async function requireOrganizer() {
   const profile = await requireProfile();
-  if (profile.role !== "admin" && profile.role !== "organizer") {
-    redirect("/events");
-  }
   return profile;
 }

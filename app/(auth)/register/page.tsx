@@ -11,7 +11,7 @@ export default function RegisterPage() {
         </div>
         <h1 className="mt-8 text-5xl font-black tracking-tight md:text-7xl">アカウント作成</h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          Memberはイベント参加用、Organizerは管理者承認後にイベント作成を利用できます。
+          登録したすべてのアカウントでイベント参加とイベント作成を利用できます。
         </p>
       </section>
 

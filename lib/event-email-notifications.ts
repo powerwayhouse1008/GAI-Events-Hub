@@ -18,10 +18,7 @@ function getEventUrl(eventId: string) {
 async function getProfileEmails(userIds: string[]) {
   if (!userIds.length) return [];
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email")
-    .in("id", userIds);
+  const { data, error } = await supabase.from("profiles").select("id, email").in("id", userIds);
 
   if (error) {
     console.error("Could not load email recipients:", error.message);
@@ -100,9 +97,7 @@ export async function sendRegistrationStatusEmail(registrationId: string, status
   const eventData = Array.isArray(data.events) ? data.events[0] : data.events;
   const eventTitle = eventData?.title || "イベント";
   const subject =
-    status === "approved"
-      ? `参加申込が承認されました: ${eventTitle}`
-      : `参加申込が却下されました: ${eventTitle}`;
+    status === "approved" ? `参加申込が承認されました: ${eventTitle}` : `参加申込が却下されました: ${eventTitle}`;
   const message =
     status === "approved"
       ? `「${eventTitle}」への参加申込が主催者により承認されました。`
@@ -110,6 +105,51 @@ export async function sendRegistrationStatusEmail(registrationId: string, status
 
   await sendEventEmailToUsers({
     userIds: [data.user_id],
+    eventId: data.event_id,
+    subject,
+    message
+  });
+}
+
+export async function sendRegistrationSubmittedEmail(registrationId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("event_id, user_id, status, events(title, organizer_id, approval_mode)")
+    .eq("id", registrationId)
+    .single();
+
+  if (error || !data) {
+    if (error) console.error("Could not load registration submission for email:", error.message);
+    return;
+  }
+
+  const eventData = Array.isArray(data.events) ? data.events[0] : data.events;
+  const organizerId = eventData?.organizer_id;
+  if (!organizerId || organizerId === data.user_id) return;
+
+  const { data: participant, error: participantError } = await supabase
+    .from("profiles")
+    .select("display_name, email")
+    .eq("id", data.user_id)
+    .maybeSingle();
+
+  if (participantError) {
+    console.error("Could not load registration participant for email:", participantError.message);
+  }
+
+  const participantName = participant?.display_name || participant?.email || "参加者";
+  const eventTitle = eventData?.title || "イベント";
+  const isAutoApproval = eventData?.approval_mode === "auto" || data.status === "approved";
+  const subject = isAutoApproval
+    ? `新しい参加者が参加しました: ${eventTitle}`
+    : `参加申込の承認が必要です: ${eventTitle}`;
+  const message = isAutoApproval
+    ? `${participantName}さんが「${eventTitle}」に参加しました。`
+    : `${participantName}さんが「${eventTitle}」への参加を申し込みました。主催者ダッシュボードで承認または却下してください。`;
+
+  await sendEventEmailToUsers({
+    userIds: [organizerId],
     eventId: data.event_id,
     subject,
     message
