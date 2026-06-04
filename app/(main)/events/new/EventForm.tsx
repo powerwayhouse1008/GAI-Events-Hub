@@ -219,11 +219,11 @@ export function EventForm({ event }: EventFormProps) {
           onClick={createAiCover}
         >
           {generatingCover ? (
-            <span className="loading-dots" aria-label="Dang tao anh" />
+            <span className="loading-dots" aria-label="画像を生成中" />
           ) : (
             <>
               <WandSparkles size={20} />
-              Tao anh AI theo chu de
+              テーマに合わせてAI画像を生成
             </>
           )}
         </button>
