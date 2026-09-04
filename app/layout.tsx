@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { GlobalButtonLoading } from "@/components/GlobalButtonLoading";
+import { LanguageProvider } from "@/components/LanguageProvider";
+import { SiteFooterLinks } from "@/components/SiteFooterLinks";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,8 +17,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <GlobalButtonLoading />
-        {children}
+        <LanguageProvider>
+          <GlobalButtonLoading />
+          {children}
+          <SiteFooterLinks />
+        </LanguageProvider>
       </body>
     </html>
   );
