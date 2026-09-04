@@ -14,7 +14,7 @@ function getOAuthMessage(error: string | null) {
     return "Googleログインはまだ有効になっていません。SupabaseのAuthentication ProvidersでGoogleを有効にしてください。";
   }
   if (error === "oauth_exchange_failed") {
-    return "Googleログインの認証コードをセッションに交換できませんでした。SupabaseのRedirect URLが現在のURLの /auth/callback と一致しているか確認してください。";
+    return "Googleログインの認証コードをセッションに交換できませんでした。SupabaseのRedirect URLを確認してください。";
   }
 
   return "";
@@ -22,15 +22,9 @@ function getOAuthMessage(error: string | null) {
 
 function getEmailMessage(error: string | null) {
   if (error === "invalid") return "メールアドレスまたはパスワードが正しくありません。";
-  if (error === "email_not_confirmed") {
-    return "メール認証が完了していません。確認メールを開いて認証してください。";
-  }
-  if (error === "too_many") {
-    return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
-  }
-  if (error === "session_missing") {
-    return "ログインは成功しましたが、ブラウザにセッションを保存できませんでした。Cookieを許可してから再度ログインしてください。";
-  }
+  if (error === "email_not_confirmed") return "メール認証が完了していません。確認メールを開いて認証してください。";
+  if (error === "too_many") return "ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。";
+  if (error === "session_missing") return "ログインは成功しましたが、ブラウザにセッションを保存できませんでした。Cookieを許可して再度ログインしてください。";
   if (error === "unknown") return "ログインできませんでした。入力内容を確認してください。";
   return "";
 }
@@ -53,16 +47,12 @@ export function LoginForm() {
         onClick={signInWithGoogle}
         disabled={googleLoading || emailLoading}
         type="button"
-        className="flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-4 font-black hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {googleLoading ? "Googleへ移動中..." : "Googleでログイン"}
       </button>
 
-      {message && (
-        <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-          {message}
-        </p>
-      )}
+      {message && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{message}</p>}
 
       <div className="my-6 flex items-center gap-3 text-sm text-slate-400">
         <div className="h-px flex-1 bg-slate-200" />
@@ -70,12 +60,7 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-slate-200" />
       </div>
 
-      <form
-        action="/auth/login"
-        method="post"
-        className="grid gap-4"
-        onSubmit={() => setEmailLoading(true)}
-      >
+      <form action="/auth/login" method="post" className="grid gap-4" onSubmit={() => setEmailLoading(true)}>
         <input type="hidden" name="redirectTo" value={redirectTo} />
         <label className="label">
           メールアドレス

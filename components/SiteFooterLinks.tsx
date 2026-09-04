@@ -18,10 +18,10 @@ const footerLinks = [
 
 export function SiteFooterLinks() {
   return (
-    <footer className="bg-black px-6 py-8 text-white">
-      <nav className="mx-auto flex max-w-[1800px] flex-wrap gap-x-7 gap-y-5 text-base font-black md:text-xl" aria-label="Footer">
+    <footer className="border-t border-slate-800 bg-slate-950 px-6 py-8 text-white">
+      <nav className="mx-auto flex max-w-[1500px] flex-wrap gap-x-6 gap-y-4 text-sm font-bold text-slate-200 md:text-base" aria-label="Footer">
         {footerLinks.map((link) => (
-          <Link key={link.href} href={link.href} className="hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+          <Link key={link.href} href={link.href} className="rounded-md hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">
             {link.label}
           </Link>
         ))}

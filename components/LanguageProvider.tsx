@@ -88,12 +88,12 @@ function LanguageSwitcher() {
 
   return (
     <aside
-      className="fixed bottom-4 right-4 z-[100] w-36 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/20 backdrop-blur"
+      className="fixed bottom-4 right-4 z-[100] w-32 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-900/15 backdrop-blur"
       aria-label={translatePhrase("Language", language)}
       data-no-translate
     >
       {open && (
-        <div className="absolute bottom-[calc(100%+0.5rem)] right-0 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/20 backdrop-blur">
+        <div className="absolute bottom-[calc(100%+0.5rem)] right-0 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/15 backdrop-blur">
           <div className="max-h-52 overflow-y-auto pr-0.5">
             {languages.map((item) => {
               const selected = item.code === language;
