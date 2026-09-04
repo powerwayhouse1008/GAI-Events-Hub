@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { Check, Languages } from "lucide-react";
+import { Check, ChevronDown, Languages } from "lucide-react";
 import { getLanguage, languages, translatePhrase, type LanguageCode } from "@/lib/i18n";
 
 type LanguageContextValue = {
@@ -83,38 +83,56 @@ export function useLanguage() {
 
 function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const activeLanguage = languages.find((item) => item.code === language) || languages[0];
 
   return (
     <aside
-      className="fixed bottom-4 right-4 z-[100] w-[min(calc(100vw-2rem),360px)] rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl shadow-slate-900/20 backdrop-blur"
+      className="fixed bottom-4 right-4 z-[100] w-36 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/20 backdrop-blur"
       aria-label={translatePhrase("Language", language)}
       data-no-translate
     >
-      <div className="mb-2 flex items-center gap-2 px-2 text-xs font-black uppercase tracking-wider text-slate-500">
-        <Languages size={16} aria-hidden="true" />
-        <span>{translatePhrase("Language", language)}</span>
-      </div>
-      <div className="grid grid-cols-4 gap-1">
-        {languages.map((item) => {
-          const selected = item.code === language;
+      {open && (
+        <div className="absolute bottom-[calc(100%+0.5rem)] right-0 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/20 backdrop-blur">
+          <div className="max-h-52 overflow-y-auto pr-0.5">
+            {languages.map((item) => {
+              const selected = item.code === language;
 
-          return (
-            <button
-              key={item.code}
-              type="button"
-              className={`flex min-h-11 items-center justify-center gap-1 rounded-xl px-2 text-sm font-black transition ${
-                selected ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-100"
-              }`}
-              aria-pressed={selected}
-              aria-label={item.label}
-              onClick={() => setLanguage(item.code)}
-            >
-              {selected && <Check size={14} aria-hidden="true" />}
-              <span>{item.shortLabel}</span>
-            </button>
-          );
-        })}
-      </div>
+              return (
+                <button
+                  key={item.code}
+                  type="button"
+                  className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm font-bold transition ${
+                    selected ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                  aria-pressed={selected}
+                  onClick={() => {
+                    setLanguage(item.code);
+                    setOpen(false);
+                  }}
+                >
+                  <span>{item.label}</span>
+                  {selected && <Check size={14} aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-3 text-sm font-black text-slate-800 transition hover:bg-slate-100"
+        aria-expanded={open}
+        aria-label={translatePhrase("Language", language)}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="flex items-center gap-2">
+          <Languages size={16} aria-hidden="true" />
+          {activeLanguage.shortLabel}
+        </span>
+        <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
     </aside>
   );
 }
