@@ -318,7 +318,11 @@ export function CalendarClient({ events }: { events: Event[] }) {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#eefcf4,#f8fafc_45%,#f7f0ff)] px-4 py-8 text-slate-950 sm:px-6">
+    <main
+      key={language}
+      data-no-translate
+      className="min-h-screen bg-[linear-gradient(135deg,#eefcf4,#f8fafc_45%,#f7f0ff)] px-4 py-8 text-slate-950 sm:px-6"
+    >
       <section className="mx-auto max-w-[1180px] overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-2xl shadow-emerald-950/10 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-5 py-5 text-white shadow-lg shadow-emerald-950/20">
           <div className="flex items-center gap-4">
