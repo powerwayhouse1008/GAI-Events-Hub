@@ -10,6 +10,8 @@ type EventWithCount = Event & {
 
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
+const eventListColumns =
+  "id,title,description,category,region,location,cover_url,theme_color,starts_at,ends_at,featured";
 
 const themeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string }> = {
   purple: {
@@ -218,7 +220,11 @@ export default async function EventsPage({
   const sp = await searchParams;
   const supabase = await createClient();
 
-  let query = supabase.from("events").select("*").eq("status", "published").order("starts_at", { ascending: true });
+  let query = supabase
+    .from("events")
+    .select(eventListColumns)
+    .eq("status", "published")
+    .order("starts_at", { ascending: true });
 
   if (sp.q) query = query.ilike("title", `%${sp.q}%`);
   if (sp.category) query = query.eq("category", sp.category);

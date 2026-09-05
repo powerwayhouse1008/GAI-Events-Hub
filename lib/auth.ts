@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
 import { getAppSessionUserId } from "@/lib/app-session";
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async function getCurrentUser() {
   const supabase = await createClient();
   const {
     data: { user }
@@ -23,7 +24,7 @@ export async function getCurrentUser() {
   } catch {
     return null;
   }
-}
+});
 
 function profileFromUser(user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>): Profile {
   const configuredAdminEmail = (process.env.ADMIN_EMAIL || "mai@powerway.jp").toLowerCase();
@@ -72,7 +73,7 @@ async function upsertProfileWithServiceRole(profile: Profile) {
   return data as Profile | null;
 }
 
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async function getProfile(): Promise<Profile | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -122,7 +123,7 @@ export async function getProfile(): Promise<Profile | null> {
   } catch {
     return fallbackProfile;
   }
-}
+});
 
 export async function requireUser() {
   const user = await getCurrentUser();

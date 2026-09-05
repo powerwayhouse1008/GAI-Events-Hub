@@ -43,25 +43,13 @@ export function GlobalButtonLoading() {
       setLoading(submitter);
     };
 
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const link = target?.closest("a[href]") as HTMLAnchorElement | null;
-      if (!link || link.closest("[data-skip-global-loading='true']")) return;
-      if (link.target || link.href.includes("#")) return;
-      const url = new URL(link.href);
-      if (url.origin !== window.location.origin) return;
-      setLoading(link);
-    };
-
     const onPageShow = () => resetLoadingButtons();
 
     document.addEventListener("submit", onSubmit, true);
-    document.addEventListener("click", onClick, true);
     window.addEventListener("pageshow", onPageShow);
 
     return () => {
       document.removeEventListener("submit", onSubmit, true);
-      document.removeEventListener("click", onClick, true);
       window.removeEventListener("pageshow", onPageShow);
     };
   }, []);

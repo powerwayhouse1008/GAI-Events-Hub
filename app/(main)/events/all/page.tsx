@@ -5,6 +5,7 @@ import type { Event } from "@/lib/types";
 
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
+const archiveEventColumns = "id,title,description,category,region,location,cover_url,starts_at,ends_at";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("ja-JP", {
@@ -71,7 +72,11 @@ export default async function AllEventsPage({
   const sp = await searchParams;
   const supabase = await createClient();
 
-  let query = supabase.from("events").select("*").eq("status", "published").order("starts_at", { ascending: false });
+  let query = supabase
+    .from("events")
+    .select(archiveEventColumns)
+    .eq("status", "published")
+    .order("starts_at", { ascending: false });
 
   if (sp.q) query = query.ilike("title", `%${sp.q}%`);
   if (sp.category) query = query.eq("category", sp.category);
