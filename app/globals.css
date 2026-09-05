@@ -15,12 +15,27 @@ body {
   text-rendering: geometricPrecision;
 }
 
+body,
+button,
+a,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+label {
+  overflow-wrap: break-word;
+}
+
 .card {
   @apply rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.04];
 }
 
 .btn {
-  @apply inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-3 text-sm font-bold transition duration-200;
+  @apply inline-flex min-h-11 items-center justify-center whitespace-normal rounded-xl px-5 py-3 text-center text-sm font-bold leading-snug transition duration-200;
 }
 
 .btn-primary {

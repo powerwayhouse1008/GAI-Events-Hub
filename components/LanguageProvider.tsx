@@ -12,12 +12,18 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 const originalText = new WeakMap<Text, string>();
 const originalPlaceholder = new WeakMap<HTMLInputElement | HTMLTextAreaElement, string>();
+const originalAttributes = new WeakMap<Element, Map<string, string>>();
+const translatableAttributes = ["aria-label", "title"] as const;
+let isApplyingTranslations = false;
 
 function applyTranslations(language: LanguageCode) {
+  isApplyingTranslations = true;
+
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
-      if (!parent || parent.closest("[data-no-translate],script,style,textarea")) return NodeFilter.FILTER_REJECT;
+      if (!parent || parent.closest("[data-no-translate],script,style,textarea,noscript")) return NodeFilter.FILTER_REJECT;
+      if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
       if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -34,9 +40,31 @@ function applyTranslations(language: LanguageCode) {
 
   const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input[placeholder], textarea[placeholder]");
   fields.forEach((field) => {
+    if (field.closest("[data-no-translate]")) return;
     if (!originalPlaceholder.has(field)) originalPlaceholder.set(field, field.placeholder);
     const nextPlaceholder = translatePhrase(originalPlaceholder.get(field) || "", language);
     if (field.placeholder !== nextPlaceholder) field.placeholder = nextPlaceholder;
+  });
+
+  const attributeElements = document.querySelectorAll<HTMLElement>(
+    translatableAttributes.map((attribute) => `[${attribute}]`).join(",")
+  );
+  attributeElements.forEach((element) => {
+    if (element.closest("[data-no-translate]")) return;
+    if (!originalAttributes.has(element)) originalAttributes.set(element, new Map());
+    const originals = originalAttributes.get(element)!;
+
+    translatableAttributes.forEach((attribute) => {
+      const value = element.getAttribute(attribute);
+      if (!value?.trim()) return;
+      if (!originals.has(attribute)) originals.set(attribute, value);
+      const nextValue = translatePhrase(originals.get(attribute) || "", language);
+      if (value !== nextValue) element.setAttribute(attribute, nextValue);
+    });
+  });
+
+  window.requestAnimationFrame(() => {
+    isApplyingTranslations = false;
   });
 }
 
@@ -48,15 +76,28 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const htmlLang = languages.find((item) => item.code === language)?.htmlLang || "ja";
+    let frame = 0;
+
+    const scheduleTranslations = () => {
+      if (isApplyingTranslations || frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        applyTranslations(language);
+      });
+    };
+
     document.documentElement.lang = htmlLang;
     document.documentElement.dataset.language = language;
     window.localStorage.setItem("site-language", language);
-    applyTranslations(language);
+    scheduleTranslations();
 
-    const observer = new MutationObserver(() => applyTranslations(language));
+    const observer = new MutationObserver(scheduleTranslations);
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, [language]);
 
   const value = useMemo(
