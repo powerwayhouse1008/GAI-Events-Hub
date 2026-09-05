@@ -13,10 +13,10 @@ const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hon
 
 const themeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string }> = {
   purple: {
-    border: "border-violet-300/25",
+    border: "border-violet-300/30",
     badge: "text-violet-200",
-    glow: "shadow-violet-950/20",
-    gradient: "from-violet-500 to-fuchsia-500",
+    glow: "shadow-violet-950/35",
+    gradient: "from-violet-600 via-purple-500 to-fuchsia-500",
     soft: "from-violet-400/18 to-fuchsia-400/10"
   },
   blue: {
@@ -118,46 +118,18 @@ async function withAttendeeCounts(events: Event[]) {
   }
 }
 
-function TimelineCard({ event, side }: { event: EventWithCount; side: "left" | "right" }) {
-  const theme = getTheme(event);
-  const parts = dateParts(event.starts_at);
-  const isRight = side === "right";
-
-  return (
-    <div className="relative grid gap-5 md:grid-cols-[1fr_84px_1fr]">
-      <div className={isRight ? "hidden md:block" : ""}>{!isRight && <TimelineEventBody event={event} />}</div>
-
-      <div className="hidden flex-col items-center md:flex">
-        <div className="grid h-3.5 w-3.5 rounded-full bg-cyan-200 shadow-[0_0_24px_rgba(103,232,249,.75)]" />
-        <div className="h-full min-h-52 w-px bg-gradient-to-b from-cyan-200/70 via-white/25 to-transparent" />
-      </div>
-
-      <div className={`flex items-center ${isRight ? "md:justify-start" : "md:justify-end"} text-slate-300`}>
-        <div className="w-24 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-center">
-          <p className="text-xs font-bold">{parts.month}</p>
-          <p className="text-4xl font-black text-white">{parts.day}</p>
-          <p className="text-xs font-bold">{parts.weekday}</p>
-        </div>
-      </div>
-
-      <div className={isRight ? "md:col-start-3 md:row-start-1" : "md:hidden"}>{isRight && <TimelineEventBody event={event} />}</div>
-      <div className={`pointer-events-none absolute inset-x-0 top-8 -z-10 h-32 bg-gradient-to-r ${theme.soft} blur-3xl`} />
-    </div>
-  );
-}
-
 function TimelineEventBody({ event }: { event: EventWithCount }) {
   const theme = getTheme(event);
 
   return (
-    <article className={`rounded-2xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`}>
+    <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`}>
       <div className="flex items-start gap-4">
-        <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${theme.gradient} text-white shadow-lg`}>
-          <Sparkles size={22} />
+        <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${theme.gradient} text-white shadow-lg`}>
+          <Sparkles size={23} />
         </div>
         <div className="min-w-0">
-          <p className={`text-xs font-black uppercase ${theme.badge}`}>{event.category || "AI Event"}</p>
-          <h3 className="mt-2 text-2xl font-black text-white">{event.title}</h3>
+          <p className={`text-xs font-black uppercase ${theme.badge}`}>{event.category || "AI"}</p>
+          <h3 className="mt-2 text-2xl font-black leading-tight text-white">{event.title}</h3>
           <div className="mt-4 grid gap-2 text-sm text-slate-300">
             <p className="flex items-center gap-2">
               <CalendarDays size={16} /> {formatDate(event.starts_at)} {formatTimeRange(event)}
@@ -175,6 +147,31 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function TimelineCard({ event, side }: { event: EventWithCount; side: "left" | "right" }) {
+  const theme = getTheme(event);
+  const parts = dateParts(event.starts_at);
+  const isRight = side === "right";
+
+  return (
+    <div className="relative grid gap-5 md:grid-cols-[1fr_84px_1fr]">
+      <div className={isRight ? "hidden md:block" : ""}>{!isRight && <TimelineEventBody event={event} />}</div>
+      <div className="hidden flex-col items-center md:flex">
+        <div className="grid h-3.5 w-3.5 rounded-full bg-cyan-200 shadow-[0_0_24px_rgba(103,232,249,.75)]" />
+        <div className="h-full min-h-52 w-px bg-gradient-to-b from-cyan-200/70 via-white/25 to-transparent" />
+      </div>
+      <div className={`flex items-center ${isRight ? "md:justify-start" : "md:justify-end"} text-slate-300`}>
+        <div className="w-24 text-center">
+          <p className="text-xs font-bold">{parts.month}</p>
+          <p className="text-4xl font-black text-white">{parts.day}</p>
+          <p className="text-xs font-bold">{parts.weekday}</p>
+        </div>
+      </div>
+      <div className={isRight ? "md:col-start-3 md:row-start-1" : "md:hidden"}>{isRight && <TimelineEventBody event={event} />}</div>
+      <div className={`pointer-events-none absolute inset-x-0 top-8 -z-10 h-32 bg-gradient-to-r ${theme.soft} blur-3xl`} />
+    </div>
   );
 }
 
@@ -235,66 +232,54 @@ export default async function EventsPage({
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#080a14] text-white">
-      <section className="relative border-b border-white/10">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(8,10,20,.35),rgba(8,10,20,.92)_62%),linear-gradient(90deg,rgba(14,165,233,.2),transparent_36%,rgba(217,70,239,.12))]" />
-        <div className="relative mx-auto grid max-w-[1500px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_480px] lg:py-24">
+      <section className="relative min-h-[560px] border-b border-white/10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(34,211,238,.18),transparent_30%),radial-gradient(circle_at_77%_36%,rgba(124,58,237,.32),transparent_34%),radial-gradient(circle_at_42%_92%,rgba(236,72,153,.16),transparent_32%),linear-gradient(115deg,#061525_0%,#080812_45%,#14103a_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,10,20,.18),rgba(8,10,20,.7)_62%)]" />
+        <div className="relative mx-auto grid max-w-[1500px] gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_520px] lg:py-28">
           <div className="max-w-3xl">
-            <p className="inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-black uppercase text-cyan-200">AI Event Hub</p>
-            <h1 className="mt-6 max-w-3xl text-5xl font-black leading-tight md:text-7xl">
-              Discover Amazing <span className="text-cyan-200">AI Events</span>
+            <p className="text-xs font-black uppercase tracking-[0.42em] text-cyan-300">AI Event Hub</p>
+            <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[1.05] md:text-7xl">
+              Discover Amazing <span className="bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">AI Events</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
               世界中のAIコミュニティとつながり、学び、イベントに参加できます。主催者はイベントを作成し、画像や資料も公開できます。
             </p>
 
-            <form className="mt-8 grid gap-3 rounded-2xl border border-white/15 bg-white/10 p-2 shadow-2xl shadow-black/20 backdrop-blur md:grid-cols-[1fr_150px_150px_auto]">
-              <input className="rounded-xl bg-white px-4 py-3 text-slate-950 outline-none placeholder:text-slate-400" name="q" defaultValue={sp.q} placeholder="Search events..." />
-              <select className="rounded-xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="category" defaultValue={sp.category || ""}>
+            <form className="mt-8 grid max-w-[620px] gap-2 rounded-3xl border border-white/15 bg-white/10 p-2 shadow-2xl shadow-black/20 backdrop-blur md:grid-cols-[1fr_140px_140px_auto]">
+              <input className="rounded-2xl bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-400 focus:bg-white/15" name="q" defaultValue={sp.q} placeholder="Search events..." />
+              <select className="rounded-2xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="category" defaultValue={sp.category || ""}>
                 <option value="">Category</option>
                 {categories.map((category) => (
                   <option key={category}>{category}</option>
                 ))}
               </select>
-              <select className="rounded-xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="region" defaultValue={sp.region || ""}>
+              <select className="rounded-2xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="region" defaultValue={sp.region || ""}>
                 <option value="">Region</option>
                 {regions.map((region) => (
                   <option key={region}>{region}</option>
                 ))}
               </select>
-              <button className="btn bg-cyan-200 text-slate-950 hover:bg-white">
+              <button className="btn rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-950/30 hover:from-violet-500 hover:to-fuchsia-400">
                 <Search size={18} /> Search
               </button>
             </form>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#all-events" className="btn bg-white text-slate-950 hover:bg-cyan-100">
+              <a href="#all-events" className="btn rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-950/30 hover:from-violet-500 hover:to-fuchsia-400">
                 Browse Events <ChevronRight size={18} />
               </a>
-              <Link href="/events/new" className="btn border border-white/20 bg-white/5 text-white hover:bg-white/10">
+              <Link href="/events/new" className="btn rounded-full border border-white/20 bg-white/5 text-white hover:bg-white/10">
                 <Plus size={18} /> Create Event
               </Link>
             </div>
           </div>
 
-          <div className="hidden min-h-[380px] items-center lg:flex">
-            <div className="w-full rounded-2xl border border-white/15 bg-white/[0.07] p-5 shadow-2xl shadow-black/30 backdrop-blur">
-              <div className="aspect-square rounded-xl border border-cyan-200/25 bg-[linear-gradient(135deg,rgba(34,211,238,.22),rgba(139,92,246,.2)),linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03))] p-6">
-                <div className="flex h-full flex-col justify-between">
-                  <div className="flex items-center justify-between text-sm font-bold text-slate-200">
-                    <span>GLOBAL</span>
-                    <span>GMT+9</span>
-                  </div>
-                  <div>
-                    <p className="text-7xl font-black">AI</p>
-                    <p className="mt-3 text-lg font-bold text-cyan-100">Community events, documents and registration in one place.</p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 text-center text-xs font-bold text-slate-300">
-                    <span className="rounded-lg bg-white/10 py-3">Talks</span>
-                    <span className="rounded-lg bg-white/10 py-3">Meetups</span>
-                    <span className="rounded-lg bg-white/10 py-3">Labs</span>
-                  </div>
-                </div>
+          <div className="hidden min-h-[380px] items-center justify-center lg:flex">
+            <div className="relative h-[300px] w-[430px]">
+              <div className="absolute left-8 top-28 h-20 w-[360px] rounded-full border border-white/15 bg-white/[0.03]" />
+              <div className="absolute inset-0 bg-fuchsia-500/20 blur-3xl" />
+              <div className="absolute left-24 top-8 grid h-56 w-56 rotate-12 place-items-center rounded-[2rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600 via-violet-600 to-fuchsia-500 text-6xl font-black text-white shadow-[0_0_80px_rgba(124,58,237,.55)]">
+                AI
               </div>
             </div>
           </div>
@@ -303,7 +288,7 @@ export default async function EventsPage({
 
       <section className="mx-auto max-w-[1400px] px-4 py-14 sm:px-6">
         <div className="text-center">
-          <p className="text-xs font-black uppercase text-cyan-200">Upcoming Events</p>
+          <p className="text-xs font-black uppercase tracking-[0.48em] text-cyan-300">Upcoming Events</p>
           <h2 className="mt-3 text-4xl font-black">Event Timeline</h2>
           <p className="mt-3 text-slate-400">日付ごとに注目イベントをタイムライン表示します。</p>
         </div>
@@ -317,8 +302,8 @@ export default async function EventsPage({
       </section>
 
       {featuredEvent && (
-        <section className="mx-auto grid max-w-[1400px] gap-0 px-4 pb-14 sm:px-6 lg:grid-cols-[1.15fr_.85fr]">
-          <div className="min-h-[340px] overflow-hidden rounded-t-2xl bg-slate-900 lg:rounded-l-2xl lg:rounded-tr-none">
+        <section className="mx-auto grid max-w-[1400px] gap-0 px-4 pb-14 sm:px-6 lg:grid-cols-[1.35fr_1fr]">
+          <div className="min-h-[340px] overflow-hidden rounded-t-3xl bg-slate-900 lg:rounded-l-3xl lg:rounded-tr-none">
             {featuredEvent.cover_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={featuredEvent.cover_url} alt="" className="h-full min-h-[340px] w-full object-cover" />
@@ -326,7 +311,7 @@ export default async function EventsPage({
               <div className={`grid h-full min-h-[340px] place-items-center bg-gradient-to-br ${featuredTheme.gradient} text-7xl font-black`}>AI</div>
             )}
           </div>
-          <div className="rounded-b-2xl border border-white/10 bg-white/[0.08] p-8 shadow-xl backdrop-blur lg:rounded-r-2xl lg:rounded-bl-none">
+          <div className="rounded-b-3xl border border-white/10 bg-white/[0.08] p-8 shadow-xl shadow-violet-950/20 backdrop-blur lg:rounded-r-3xl lg:rounded-bl-none">
             <p className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-black uppercase text-amber-200">Featured Poster</p>
             <h2 className="mt-5 text-4xl font-black">{featuredEvent.title}</h2>
             <p className="mt-5 line-clamp-4 leading-8 text-slate-300">{featuredEvent.description || "AI community event"}</p>
@@ -342,10 +327,10 @@ export default async function EventsPage({
               </span>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/events/${featuredEvent.id}`} className={`btn bg-gradient-to-r ${featuredTheme.gradient} text-white`}>
+              <Link href={`/events/${featuredEvent.id}`} className={`btn rounded-full bg-gradient-to-r ${featuredTheme.gradient} text-white`}>
                 Join Event <ChevronRight size={18} />
               </Link>
-              <Link href={`/events/${featuredEvent.id}`} className="btn border border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <Link href={`/events/${featuredEvent.id}`} className="btn rounded-full border border-white/15 bg-white/5 text-white hover:bg-white/10">
                 Add to Calendar
               </Link>
             </div>
@@ -359,12 +344,12 @@ export default async function EventsPage({
             <h2 className="text-4xl font-black">All Events</h2>
             <p className="mt-2 text-slate-400">すべてのAIイベントを確認できます。</p>
           </div>
-          <Link href="/events/all" className="btn border border-white/15 bg-white/5 text-white hover:bg-white/10">
+          <Link href="/events/all" className="btn rounded-full border border-white/15 bg-white/5 text-white hover:bg-white/10">
             View All Events
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {allEvents.map((event) => (
             <EventGridCard key={event.id} event={event} />
           ))}
