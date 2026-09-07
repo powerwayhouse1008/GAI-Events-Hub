@@ -51,11 +51,17 @@ function getTokyoDateInputValue(date = new Date()) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function isSelectionInside(element: HTMLElement, range: Range) {
+  return element.contains(range.commonAncestorContainer);
+}
+
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const selectionRef = useRef<Range | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatingCover, setGeneratingCover] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
@@ -65,10 +71,45 @@ export function EventForm({ event }: EventFormProps) {
   const isEditing = Boolean(event);
   const minStartDate = getTokyoDateInputValue();
 
+  function syncDescription() {
+    setDescription(editorRef.current?.innerHTML || "");
+  }
+
+  function saveEditorSelection() {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (isSelectionInside(editor, range)) {
+      selectionRef.current = range.cloneRange();
+    }
+  }
+
+  function restoreEditorSelection() {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    const range = selectionRef.current;
+    if (!editor || !selection) return;
+
+    editor.focus();
+    selection.removeAllRanges();
+    if (range && isSelectionInside(editor, range)) {
+      selection.addRange(range);
+      return;
+    }
+
+    const nextRange = document.createRange();
+    nextRange.selectNodeContents(editor);
+    nextRange.collapse(false);
+    selection.addRange(nextRange);
+  }
+
   function runEditorCommand(command: string, value?: string) {
+    restoreEditorSelection();
     document.execCommand(command, false, value);
-    const editor = document.getElementById("event-description-editor");
-    if (editor) setDescription(editor.innerHTML);
+    syncDescription();
+    saveEditorSelection();
   }
 
   async function createAiCover() {
@@ -78,7 +119,7 @@ export function EventForm({ event }: EventFormProps) {
     const formData = new FormData(formRef.current);
     const result = await generateEventCover({
       title: String(formData.get("title") || ""),
-      description,
+      description: editorRef.current?.innerText || "",
       category: String(formData.get("category") || "AI"),
       region: String(formData.get("region") || "Online"),
       location: String(formData.get("location") || ""),
@@ -102,6 +143,7 @@ export function EventForm({ event }: EventFormProps) {
 
   async function submit(formData: FormData) {
     setLoading(true);
+    syncDescription();
 
     const {
       data: { user }
@@ -153,10 +195,11 @@ export function EventForm({ event }: EventFormProps) {
       coverUrl = data.publicUrl;
     }
 
+    const htmlDescription = editorRef.current?.innerHTML || description;
     const result = await saveEvent({
       eventId: event?.id,
       title: String(formData.get("title") || ""),
-      description,
+      description: htmlDescription,
       organizerName: String(formData.get("organizer_name") || ""),
       category: String(formData.get("category") || "AI"),
       region: String(formData.get("region") || "Online"),
@@ -274,47 +317,57 @@ export function EventForm({ event }: EventFormProps) {
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 p-3">
-            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontName", event.target.value)} defaultValue="">
-              <option value="" disabled>フォント</option>
+            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontName", event.target.value)} onMouseDown={saveEditorSelection} defaultValue="">
+              <option value="" disabled>
+                フォント
+              </option>
               <option value="Arial">Arial</option>
               <option value="Georgia">Georgia</option>
               <option value="Times New Roman">Times</option>
               <option value="Courier New">Courier</option>
               <option value="Yu Gothic">Yu Gothic</option>
             </select>
-            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontSize", event.target.value)} defaultValue="">
-              <option value="" disabled>サイズ</option>
+            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontSize", event.target.value)} onMouseDown={saveEditorSelection} defaultValue="">
+              <option value="" disabled>
+                サイズ
+              </option>
               <option value="2">小</option>
               <option value="3">標準</option>
               <option value="5">大</option>
               <option value="7">特大</option>
             </select>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("bold")} type="button" aria-label="太字">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("bold")} type="button" aria-label="太字">
               <Bold size={17} />
             </button>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("italic")} type="button" aria-label="斜体">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("italic")} type="button" aria-label="斜体">
               <Italic size={17} />
             </button>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("underline")} type="button" aria-label="下線">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("underline")} type="button" aria-label="下線">
               <Underline size={17} />
             </button>
-            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
+            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onMouseDown={saveEditorSelection}>
               <Palette size={17} />
-              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onChange={(event) => runEditorCommand("foreColor", event.target.value)} aria-label="文字色" />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("foreColor", event.currentTarget.value)} aria-label="文字色" />
             </label>
-            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
+            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onMouseDown={saveEditorSelection}>
               <Highlighter size={17} />
-              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onChange={(event) => runEditorCommand("hiliteColor", event.target.value)} aria-label="背景色" />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("hiliteColor", event.currentTarget.value)} aria-label="背景色" />
             </label>
           </div>
           <input type="hidden" name="description" value={description} />
           <div
-            id="event-description-editor"
+            ref={editorRef}
             className="min-h-40 w-full bg-white px-4 py-3 leading-7 text-slate-900 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]"
             contentEditable
             data-placeholder="説明を追加"
             dangerouslySetInnerHTML={{ __html: event?.description || "" }}
-            onInput={(event) => setDescription(event.currentTarget.innerHTML)}
+            onBlur={saveEditorSelection}
+            onInput={() => {
+              syncDescription();
+              saveEditorSelection();
+            }}
+            onKeyUp={saveEditorSelection}
+            onMouseUp={saveEditorSelection}
             role="textbox"
             aria-label="イベント説明"
             suppressContentEditableWarning
@@ -325,12 +378,16 @@ export function EventForm({ event }: EventFormProps) {
           <input className="input" name="organizer_name" placeholder="主催者名" defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
           <select className="input" name="category" defaultValue={event?.category || "AI"}>
             {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
           </select>
           <select className="input" name="region" defaultValue={event?.region || "Tokyo"}>
             {regions.map((region) => (
-              <option key={region} value={region}>{region}</option>
+              <option key={region} value={region}>
+                {region}
+              </option>
             ))}
           </select>
           <input className="input" name="ticket_price" type="number" min="0" placeholder="チケット価格" defaultValue={event?.ticket_price || 0} />
@@ -346,8 +403,14 @@ export function EventForm({ event }: EventFormProps) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {themeColors.map((color) => {
               const checked = selectedTheme === color.value;
+
               return (
-                <label key={color.value} className={`cursor-pointer rounded-[18px] border bg-white/75 p-3 shadow-sm transition ${checked ? "border-purple-500 ring-2 ring-purple-200" : "border-slate-200 hover:border-purple-200"}`}>
+                <label
+                  key={color.value}
+                  className={`cursor-pointer rounded-[18px] border bg-white/75 p-3 shadow-sm transition ${
+                    checked ? "border-purple-500 ring-2 ring-purple-200" : "border-slate-200 hover:border-purple-200"
+                  }`}
+                >
                   <input className="sr-only" type="radio" name="theme_color" value={color.value} checked={checked} onChange={() => setSelectedTheme(color.value)} />
                   <span className={`grid h-14 place-items-center rounded-[14px] bg-gradient-to-br ${color.swatch} text-white shadow-lg`}>
                     {checked && <Check size={22} />}

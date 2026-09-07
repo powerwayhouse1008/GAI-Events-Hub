@@ -39,7 +39,7 @@ export default async function AdminEventsPage() {
               <th className="p-3">イベント名</th>
               <th className="p-3">主催者</th>
               <th className="p-3">日付</th>
-              <th className="p-3">状態</th>
+              <th className="whitespace-nowrap p-3">状態</th>
               <th className="p-3">操作</th>
             </tr>
           </thead>
@@ -49,8 +49,8 @@ export default async function AdminEventsPage() {
                 <td className="p-3 font-bold">{event.title}</td>
                 <td className="p-3">{event.organizer_name}</td>
                 <td className="p-3">{new Date(event.starts_at).toLocaleDateString("ja-JP")}</td>
-                <td className="p-3">
-                  <span className={`status status-${event.status}`}>{statusLabel[event.status] || event.status}</span>
+                <td className="whitespace-nowrap p-3">
+                  <span className={`status status-${event.status} whitespace-nowrap`}>{statusLabel[event.status] || event.status}</span>
                 </td>
                 <td className="p-3">
                   <div className="flex min-w-max flex-nowrap gap-2">
