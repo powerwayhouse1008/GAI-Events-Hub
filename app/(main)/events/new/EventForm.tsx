@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ImagePlus, WandSparkles } from "lucide-react";
+import { Bold, Check, Highlighter, ImagePlus, Italic, Palette, Underline, WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -22,13 +22,11 @@ const themeColors = [
 ];
 
 function datePart(value?: string | null) {
-  if (!value) return "";
-  return value.slice(0, 10);
+  return value ? value.slice(0, 10) : "";
 }
 
 function timePart(value?: string | null) {
-  if (!value) return "";
-  return value.slice(11, 16);
+  return value ? value.slice(11, 16) : "";
 }
 
 function autoGrowTextarea(element: HTMLTextAreaElement) {
@@ -63,18 +61,24 @@ export function EventForm({ event }: EventFormProps) {
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(event?.cover_url || null);
   const [selectedTheme, setSelectedTheme] = useState(event?.theme_color || "purple");
+  const [description, setDescription] = useState(event?.description || "");
   const isEditing = Boolean(event);
   const minStartDate = getTokyoDateInputValue();
 
+  function runEditorCommand(command: string, value?: string) {
+    document.execCommand(command, false, value);
+    const editor = document.getElementById("event-description-editor");
+    if (editor) setDescription(editor.innerHTML);
+  }
+
   async function createAiCover() {
     if (!formRef.current) return;
-
     setGeneratingCover(true);
 
     const formData = new FormData(formRef.current);
     const result = await generateEventCover({
       title: String(formData.get("title") || ""),
-      description: String(formData.get("description") || ""),
+      description,
       category: String(formData.get("category") || "AI"),
       region: String(formData.get("region") || "Online"),
       location: String(formData.get("location") || ""),
@@ -116,7 +120,6 @@ export function EventForm({ event }: EventFormProps) {
     const endsAt = `${endDate}T${endTime}:00+09:00`;
     const startsAtDate = new Date(startsAt);
     const endsAtDate = new Date(endsAt);
-
     const originalStartMinute = event ? floorToMinute(new Date(event.starts_at)).getTime() : null;
     const startChanged = originalStartMinute !== null && floorToMinute(startsAtDate).getTime() !== originalStartMinute;
 
@@ -150,10 +153,10 @@ export function EventForm({ event }: EventFormProps) {
       coverUrl = data.publicUrl;
     }
 
-    const payload = {
+    const result = await saveEvent({
       eventId: event?.id,
       title: String(formData.get("title") || ""),
-      description: String(formData.get("description") || ""),
+      description,
       organizerName: String(formData.get("organizer_name") || ""),
       category: String(formData.get("category") || "AI"),
       region: String(formData.get("region") || "Online"),
@@ -167,9 +170,7 @@ export function EventForm({ event }: EventFormProps) {
       ticketPrice: Number(formData.get("ticket_price") || 0),
       approvalMode: String(formData.get("approval_mode") || "manual"),
       featured: event?.featured || false
-    };
-
-    const result = await saveEvent(payload);
+    });
 
     if (result.error) {
       alert(result.error);
@@ -202,8 +203,8 @@ export function EventForm({ event }: EventFormProps) {
             name="cover"
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
+            onChange={(event) => {
+              const file = event.target.files?.[0];
               if (file) {
                 setGeneratedCoverUrl(null);
                 setCoverPreview(URL.createObjectURL(file));
@@ -212,12 +213,7 @@ export function EventForm({ event }: EventFormProps) {
           />
           <p className="mt-4 text-center font-bold text-purple-700">イベント画像をアップロード</p>
         </label>
-        <button
-          className="btn mt-4 w-full border border-purple-200 bg-white text-purple-700 hover:bg-purple-50"
-          disabled={loading || generatingCover}
-          type="button"
-          onClick={createAiCover}
-        >
+        <button className="btn mt-4 w-full border border-purple-200 bg-white text-purple-700 hover:bg-purple-50" disabled={loading || generatingCover} type="button" onClick={createAiCover}>
           {generatingCover ? (
             <span className="loading-dots" aria-label="画像を生成中" />
           ) : (
@@ -231,7 +227,7 @@ export function EventForm({ event }: EventFormProps) {
 
       <section className="grid gap-5 rounded-[28px] border border-purple-100 bg-white/45 p-7 shadow-sm backdrop-blur">
         <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-          イベントは承認待ちとして保存されます。公開するには管理者の承認が必要です。
+          イベントは承認待ちとして保存されます。公開するには管理者による承認が必要です。
         </div>
 
         <textarea
@@ -239,7 +235,7 @@ export function EventForm({ event }: EventFormProps) {
           name="title"
           placeholder="イベント名"
           defaultValue={event?.title || ""}
-          onInput={(e) => autoGrowTextarea(e.currentTarget)}
+          onInput={(event) => autoGrowTextarea(event.currentTarget)}
           ref={(element) => {
             if (element) autoGrowTextarea(element);
           }}
@@ -269,37 +265,72 @@ export function EventForm({ event }: EventFormProps) {
           name="location"
           placeholder="会場または住所"
           defaultValue={event?.location || ""}
-          onInput={(e) => autoGrowTextarea(e.currentTarget)}
+          onInput={(event) => autoGrowTextarea(event.currentTarget)}
           ref={(element) => {
             if (element) autoGrowTextarea(element);
           }}
         />
         <input className="input" name="online_url" placeholder="オンラインURL" defaultValue={event?.online_url || ""} />
-        <textarea
-          className="input min-h-32 resize-none overflow-hidden whitespace-pre-wrap"
-          name="description"
-          placeholder="説明を追加"
-          defaultValue={event?.description || ""}
-          onInput={(e) => autoGrowTextarea(e.currentTarget)}
-          ref={(element) => {
-            if (element) autoGrowTextarea(element);
-          }}
-        />
+
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 p-3">
+            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontName", event.target.value)} defaultValue="">
+              <option value="" disabled>フォント</option>
+              <option value="Arial">Arial</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Times New Roman">Times</option>
+              <option value="Courier New">Courier</option>
+              <option value="Yu Gothic">Yu Gothic</option>
+            </select>
+            <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontSize", event.target.value)} defaultValue="">
+              <option value="" disabled>サイズ</option>
+              <option value="2">小</option>
+              <option value="3">標準</option>
+              <option value="5">大</option>
+              <option value="7">特大</option>
+            </select>
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("bold")} type="button" aria-label="太字">
+              <Bold size={17} />
+            </button>
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("italic")} type="button" aria-label="斜体">
+              <Italic size={17} />
+            </button>
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onClick={() => runEditorCommand("underline")} type="button" aria-label="下線">
+              <Underline size={17} />
+            </button>
+            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
+              <Palette size={17} />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onChange={(event) => runEditorCommand("foreColor", event.target.value)} aria-label="文字色" />
+            </label>
+            <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
+              <Highlighter size={17} />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onChange={(event) => runEditorCommand("hiliteColor", event.target.value)} aria-label="背景色" />
+            </label>
+          </div>
+          <input type="hidden" name="description" value={description} />
+          <div
+            id="event-description-editor"
+            className="min-h-40 w-full bg-white px-4 py-3 leading-7 text-slate-900 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]"
+            contentEditable
+            data-placeholder="説明を追加"
+            dangerouslySetInnerHTML={{ __html: event?.description || "" }}
+            onInput={(event) => setDescription(event.currentTarget.innerHTML)}
+            role="textbox"
+            aria-label="イベント説明"
+            suppressContentEditableWarning
+          />
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <input className="input" name="organizer_name" placeholder="主催者名" defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
           <select className="input" name="category" defaultValue={event?.category || "AI"}>
             {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
+              <option key={category} value={category}>{category}</option>
             ))}
           </select>
           <select className="input" name="region" defaultValue={event?.region || "Tokyo"}>
             {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
+              <option key={region} value={region}>{region}</option>
             ))}
           </select>
           <input className="input" name="ticket_price" type="number" min="0" placeholder="チケット価格" defaultValue={event?.ticket_price || 0} />
@@ -315,22 +346,9 @@ export function EventForm({ event }: EventFormProps) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {themeColors.map((color) => {
               const checked = selectedTheme === color.value;
-
               return (
-                <label
-                  key={color.value}
-                  className={`cursor-pointer rounded-[18px] border bg-white/75 p-3 shadow-sm transition ${
-                    checked ? "border-purple-500 ring-2 ring-purple-200" : "border-slate-200 hover:border-purple-200"
-                  }`}
-                >
-                  <input
-                    className="sr-only"
-                    type="radio"
-                    name="theme_color"
-                    value={color.value}
-                    checked={checked}
-                    onChange={() => setSelectedTheme(color.value)}
-                  />
+                <label key={color.value} className={`cursor-pointer rounded-[18px] border bg-white/75 p-3 shadow-sm transition ${checked ? "border-purple-500 ring-2 ring-purple-200" : "border-slate-200 hover:border-purple-200"}`}>
+                  <input className="sr-only" type="radio" name="theme_color" value={color.value} checked={checked} onChange={() => setSelectedTheme(color.value)} />
                   <span className={`grid h-14 place-items-center rounded-[14px] bg-gradient-to-br ${color.swatch} text-white shadow-lg`}>
                     {checked && <Check size={22} />}
                   </span>
@@ -342,7 +360,7 @@ export function EventForm({ event }: EventFormProps) {
         </fieldset>
 
         <button disabled={loading || generatingCover} className="btn btn-primary w-full text-lg" type="submit">
-          {loading ? <span className="loading-dots" aria-label="保存中" /> : isEditing ? "イベントを更新して承認申請" : "イベント作成"}
+          {loading ? <span className="loading-dots" aria-label="保存中" /> : isEditing ? "イベントを更新" : "イベント作成"}
         </button>
       </section>
     </form>

@@ -19,10 +19,8 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   return (
     <main className="min-h-screen bg-[#f8ecfb]">
       <div className="mx-auto max-w-[1800px] px-6 py-10">
-        <h1 className="text-5xl font-black tracking-tight">イベント編集</h1>
-        <p className="mt-3 text-slate-600">
-          イベントを更新すると再度「承認待ち」になり、管理者の承認後に公開されます。
-        </p>
+        <h1 className="text-5xl font-black tracking-tight">イベント修正</h1>
+        <p className="mt-3 text-slate-600">イベント情報を更新できます。管理者は更新後すぐに公開できます。</p>
         <EventForm event={event} />
       </div>
     </main>

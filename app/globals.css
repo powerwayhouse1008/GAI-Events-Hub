@@ -78,6 +78,15 @@ label {
   @apply bg-slate-100 text-slate-700;
 }
 
+.event-description {
+  overflow-wrap: anywhere;
+}
+
+.event-description p,
+.event-description div {
+  margin-bottom: 1rem;
+}
+
 .loading-dots {
   display: inline-flex;
   align-items: center;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Plus, Search, ShieldCheck, Ticket, UserRound } from "lucide-react";
+import { Calendar, Plus, Search, Settings2, ShieldCheck, Ticket, UserRound } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -23,7 +23,7 @@ export async function Nav() {
             <Calendar size={17} /> カレンダー
           </Link>
           <Link href="/search" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
-            <Search size={17} /> さがす
+            <Search size={17} /> 検索
           </Link>
           {canCreateEvent && (
             <Link href="/events/new" className="flex min-h-10 items-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-purple-700 shadow-sm hover:bg-fuchsia-200">
@@ -31,8 +31,13 @@ export async function Nav() {
             </Link>
           )}
           {profile?.role === "admin" && (
+            <Link href="/admin/events" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
+              <Settings2 size={17} /> イベント管理
+            </Link>
+          )}
+          {profile?.role === "admin" && (
             <Link href="/admin" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
-              <ShieldCheck size={17} /> Admin
+              <ShieldCheck size={17} /> 管理者
             </Link>
           )}
         </nav>
@@ -65,7 +70,7 @@ export async function Nav() {
             </>
           ) : (
             <Link href="/login" className="btn btn-primary">
-              Login
+              ログイン
             </Link>
           )}
         </div>

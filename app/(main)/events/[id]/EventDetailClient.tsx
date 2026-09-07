@@ -380,9 +380,10 @@ function HeroBlock({ event, theme }: { event: Event; theme: ReturnType<typeof ge
       </div>
 
       {event.description && (
-        <article className="border-t border-white/10 bg-black/20 p-5 leading-8 text-slate-200 sm:p-8">
-          <p className="whitespace-pre-wrap">{event.description}</p>
-        </article>
+        <article
+          className="event-description border-t border-white/10 bg-black/20 p-5 leading-8 text-slate-200 sm:p-8"
+          dangerouslySetInnerHTML={{ __html: event.description }}
+        />
       )}
     </section>
   );
