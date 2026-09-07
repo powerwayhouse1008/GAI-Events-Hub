@@ -67,13 +67,8 @@ export function EventForm({ event }: EventFormProps) {
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(event?.cover_url || null);
   const [selectedTheme, setSelectedTheme] = useState(event?.theme_color || "purple");
-  const [description, setDescription] = useState(event?.description || "");
   const isEditing = Boolean(event);
   const minStartDate = getTokyoDateInputValue();
-
-  function syncDescription() {
-    setDescription(editorRef.current?.innerHTML || "");
-  }
 
   function saveEditorSelection() {
     const editor = editorRef.current;
@@ -108,7 +103,6 @@ export function EventForm({ event }: EventFormProps) {
   function runEditorCommand(command: string, value?: string) {
     restoreEditorSelection();
     document.execCommand(command, false, value);
-    syncDescription();
     saveEditorSelection();
   }
 
@@ -143,7 +137,6 @@ export function EventForm({ event }: EventFormProps) {
 
   async function submit(formData: FormData) {
     setLoading(true);
-    syncDescription();
 
     const {
       data: { user }
@@ -195,7 +188,7 @@ export function EventForm({ event }: EventFormProps) {
       coverUrl = data.publicUrl;
     }
 
-    const htmlDescription = editorRef.current?.innerHTML || description;
+    const htmlDescription = editorRef.current?.innerHTML || "";
     const result = await saveEvent({
       eventId: event?.id,
       title: String(formData.get("title") || ""),
@@ -354,23 +347,22 @@ export function EventForm({ event }: EventFormProps) {
               <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("hiliteColor", event.currentTarget.value)} aria-label="背景色" />
             </label>
           </div>
-          <input type="hidden" name="description" value={description} />
           <div
             ref={editorRef}
-            className="min-h-40 w-full bg-white px-4 py-3 leading-7 text-slate-900 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)]"
+            className="min-h-40 w-full cursor-text bg-white px-4 py-3 leading-7 text-slate-900 outline-none focus:ring-4 focus:ring-slate-200/70"
             contentEditable
-            data-placeholder="説明を追加"
             dangerouslySetInnerHTML={{ __html: event?.description || "" }}
             onBlur={saveEditorSelection}
-            onInput={() => {
-              syncDescription();
-              saveEditorSelection();
-            }}
+            onClick={saveEditorSelection}
+            onFocus={saveEditorSelection}
+            onInput={saveEditorSelection}
             onKeyUp={saveEditorSelection}
             onMouseUp={saveEditorSelection}
             role="textbox"
             aria-label="イベント説明"
+            spellCheck
             suppressContentEditableWarning
+            tabIndex={0}
           />
         </div>
 
