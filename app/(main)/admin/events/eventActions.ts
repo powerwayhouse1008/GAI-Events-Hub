@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function approveEvent(formData: FormData) {
   await requireAdmin();
@@ -47,14 +48,14 @@ export async function featureEvent(formData: FormData) {
 
 export async function copyEvent(formData: FormData) {
   await requireAdmin();
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const id = String(formData.get("id"));
 
-  const { data: event } = await supabase.from("events").select("*").eq("id", id).single();
-  if (!event) return;
+  const { data: event, error: fetchError } = await supabase.from("events").select("*").eq("id", id).single();
+  if (fetchError || !event) return;
 
   const { id: _id, created_at: _createdAt, ...copy } = event;
-  const { data } = await supabase
+  const { data, error: insertError } = await supabase
     .from("events")
     .insert({
       ...copy,
@@ -65,6 +66,8 @@ export async function copyEvent(formData: FormData) {
     .select("id")
     .single();
 
+  if (insertError || !data?.id) return;
+
   revalidatePath("/admin/events");
-  if (data?.id) redirect(`/events/${data.id}/edit`);
+  redirect(`/events/${data.id}/edit`);
 }

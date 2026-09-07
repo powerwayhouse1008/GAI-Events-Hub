@@ -34,10 +34,7 @@ export function FooterFrameClient({ linkKey }: FooterFrameClientProps) {
   return (
     <main className="mx-auto max-w-[1500px] px-4 py-8 sm:px-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950">{item.label}</h1>
-          <p className="mt-2 break-all text-sm font-bold text-slate-500">{safeUrl}</p>
-        </div>
+        <h1 className="text-4xl font-black tracking-tight text-slate-950">{item.label}</h1>
         <a className="btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" href={safeUrl} target="_blank" rel="noopener noreferrer">
           <ExternalLink size={17} /> 新しいタブで開く
         </a>
