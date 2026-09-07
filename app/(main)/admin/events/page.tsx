@@ -53,31 +53,31 @@ export default async function AdminEventsPage() {
                   <span className={`status status-${event.status}`}>{statusLabel[event.status] || event.status}</span>
                 </td>
                 <td className="p-3">
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={`/events/${event.id}/edit`} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                  <div className="flex min-w-max flex-nowrap gap-2">
+                    <Link href={`/events/${event.id}/edit`} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                       <Edit3 size={15} /> 修正
                     </Link>
                     <form action={approveEvent}>
                       <input type="hidden" name="id" value={event.id} />
-                      <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700">
+                      <button className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-green-600 px-3 py-2 text-sm font-bold text-white hover:bg-green-700">
                         <Eye size={15} /> 公開
                       </button>
                     </form>
                     <form action={unpublishEvent}>
                       <input type="hidden" name="id" value={event.id} />
-                      <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-sm font-bold text-white hover:bg-amber-600">
+                      <button className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-500 px-3 py-2 text-sm font-bold text-white hover:bg-amber-600">
                         <EyeOff size={15} /> 下書き
                       </button>
                     </form>
                     <form action={copyEvent}>
                       <input type="hidden" name="id" value={event.id} />
-                      <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700">
+                      <button className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700">
                         <Copy size={15} /> コピー
                       </button>
                     </form>
                     <form action={deleteEvent}>
                       <input type="hidden" name="id" value={event.id} />
-                      <button className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700">
+                      <button className="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-red-600 px-3 py-2 text-sm font-bold text-white hover:bg-red-700">
                         <Trash2 size={15} /> 削除
                       </button>
                     </form>
