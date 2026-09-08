@@ -3,6 +3,7 @@
 import { Bold, Check, Highlighter, ImagePlus, Italic, Palette, Underline, WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { eventCategories, eventRegions } from "@/lib/events";
 import { createClient } from "@/lib/supabase/client";
 import type { Event } from "@/lib/types";
 import { generateEventCover, saveEvent } from "./eventActions";
@@ -11,8 +12,6 @@ type EventFormProps = {
   event?: Event;
 };
 
-const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
-const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
 const themeColors = [
   { label: "AI Purple", value: "purple", swatch: "from-violet-500 to-fuchsia-500" },
   { label: "Cyber Blue", value: "blue", swatch: "from-blue-500 to-cyan-400" },
@@ -369,14 +368,14 @@ export function EventForm({ event }: EventFormProps) {
         <div className="grid gap-4 md:grid-cols-2">
           <input className="input" name="organizer_name" placeholder="主催者名" defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
           <select className="input" name="category" defaultValue={event?.category || "AI"}>
-            {categories.map((category) => (
+            {eventCategories.map((category) => (
               <option key={category} value={category}>
                 {category}
               </option>
             ))}
           </select>
           <select className="input" name="region" defaultValue={event?.region || "Tokyo"}>
-            {regions.map((region) => (
+            {eventRegions.map((region) => (
               <option key={region} value={region}>
                 {region}
               </option>

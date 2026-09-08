@@ -29,6 +29,7 @@ import { DocumentsList } from "@/components/DocumentsList";
 import { useLocalizedEvent } from "@/components/LocalizedEventText";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
+import { formatTokyoDate, formatTokyoDateTime, formatTokyoTimeRange, getEventTheme } from "@/lib/events";
 import {
   createEventComment,
   deleteEventComment,
@@ -69,102 +70,6 @@ const statusLabel: Record<string, string> = {
   draft: "下書き",
   approved: "承認済み"
 };
-
-const themeStyles: Record<
-  string,
-  {
-    border: string;
-    badge: string;
-    glow: string;
-    gradient: string;
-    soft: string;
-    ring: string;
-  }
-> = {
-  purple: {
-    border: "border-violet-400/40",
-    badge: "text-violet-200",
-    glow: "shadow-violet-500/20",
-    gradient: "from-violet-600 to-fuchsia-500",
-    soft: "from-violet-500/16 to-fuchsia-500/8",
-    ring: "ring-violet-400/30"
-  },
-  blue: {
-    border: "border-cyan-400/40",
-    badge: "text-cyan-200",
-    glow: "shadow-cyan-500/20",
-    gradient: "from-blue-600 to-cyan-400",
-    soft: "from-blue-500/16 to-cyan-400/8",
-    ring: "ring-cyan-400/30"
-  },
-  green: {
-    border: "border-emerald-400/40",
-    badge: "text-emerald-200",
-    glow: "shadow-emerald-500/20",
-    gradient: "from-emerald-500 to-teal-400",
-    soft: "from-emerald-500/16 to-teal-400/8",
-    ring: "ring-emerald-400/30"
-  },
-  amber: {
-    border: "border-amber-400/40",
-    badge: "text-amber-200",
-    glow: "shadow-amber-500/20",
-    gradient: "from-amber-500 to-orange-500",
-    soft: "from-amber-500/16 to-orange-500/8",
-    ring: "ring-amber-400/30"
-  },
-  rose: {
-    border: "border-rose-400/40",
-    badge: "text-rose-200",
-    glow: "shadow-rose-500/20",
-    gradient: "from-rose-500 to-pink-500",
-    soft: "from-rose-500/16 to-pink-500/8",
-    ring: "ring-rose-400/30"
-  }
-};
-
-function getTheme(event: Event) {
-  return themeStyles[event.theme_color || "purple"] || themeStyles.purple;
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Tokyo"
-  });
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    timeZone: "Asia/Tokyo"
-  });
-}
-
-function formatTimeRange(event: Event) {
-  const start = new Date(event.starts_at).toLocaleTimeString("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Tokyo"
-  });
-  const end = event.ends_at
-    ? new Date(event.ends_at).toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Tokyo"
-      })
-    : "";
-
-  return end ? `${start} - ${end}` : start;
-}
 
 function autoGrowTextarea(element: HTMLTextAreaElement) {
   element.style.height = "auto";
@@ -212,7 +117,7 @@ export function EventDetailClient({
   const [engagement, setEngagement] = useState(initialEngagement);
   const [showManualMessage, setShowManualMessage] = useState(false);
   const [activeManagerModal, setActiveManagerModal] = useState<"announcement" | "document" | null>(null);
-  const theme = getTheme(localizedEvent);
+  const theme = getEventTheme(localizedEvent);
   const isManualReview = localizedEvent.approval_mode === "manual";
   const canEngage = registrationStatus === "approved";
   const approvedCount = participants.filter((participant: any) => participant.status === "approved").length;
@@ -266,8 +171,8 @@ export function EventDetailClient({
                   <h2 className="mt-5 text-2xl font-black">イベント情報</h2>
 
                   <div className="mt-6 grid gap-3">
-                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatDate(localizedEvent.starts_at)} />
-                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTimeRange(localizedEvent)} />
+                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatTokyoDate(localizedEvent.starts_at)} />
+                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTokyoTimeRange(localizedEvent)} />
                     <InfoRow icon={<MapPin size={18} />} label="場所" value={localizedEvent.location || localizedEvent.region || "オンライン / 未定"} />
                     <InfoRow icon={<Ticket size={18} />} label="価格" value={localizedEvent.ticket_price ? `¥${localizedEvent.ticket_price}` : "無料"} />
                     <InfoRow icon={<Users size={18} />} label="参加承認" value={isManualReview ? "手動承認" : "自動承認"} />
@@ -289,7 +194,7 @@ export function EventDetailClient({
                   <section className={`rounded-[8px] border ${theme.border} bg-white/[0.06] p-6 shadow-xl ${theme.glow} backdrop-blur`}>
                     <h2 className="text-2xl font-black">イベント進行状況</h2>
                     <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <StatCard label="開始日時" value={formatDateTime(localizedEvent.starts_at)} />
+                      <StatCard label="開始日時" value={formatTokyoDateTime(localizedEvent.starts_at)} />
                       <StatCard label="申込数" value={String(participants.length)} strong />
                       <StatCard label="承認済み" value={String(approvedCount)} strong />
                       <StatCard label="定員" value={localizedEvent.capacity ? String(localizedEvent.capacity) : "無制限"} strong />
@@ -356,7 +261,7 @@ export function EventDetailClient({
   );
 }
 
-function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }; theme: ReturnType<typeof getTheme> }) {
+function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }; theme: ReturnType<typeof getEventTheme> }) {
   return (
     <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl" data-no-translate>
       <div className="relative h-[360px] sm:h-[520px] lg:h-[640px]">
@@ -391,7 +296,7 @@ function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }
   );
 }
 
-function ParticipantTimeline({ announcements, theme }: { announcements: Announcement[]; theme: ReturnType<typeof getTheme> }) {
+function ParticipantTimeline({ announcements, theme }: { announcements: Announcement[]; theme: ReturnType<typeof getEventTheme> }) {
   return (
     <section className="mt-0">
       <div className="mb-5 flex items-center gap-3">
@@ -421,7 +326,7 @@ function ParticipantTimeline({ announcements, theme }: { announcements: Announce
   );
 }
 
-function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]; theme: ReturnType<typeof getTheme> }) {
+function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]; theme: ReturnType<typeof getEventTheme> }) {
   if (documents.length === 0) return null;
 
   return (
@@ -530,7 +435,7 @@ function EventEngagementPanel({
     myCommentRestricted: boolean;
   };
   onUpdated: () => Promise<void>;
-  theme: ReturnType<typeof getTheme>;
+  theme: ReturnType<typeof getEventTheme>;
 }) {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -713,7 +618,7 @@ function RegistrationAction({
   isManualReview: boolean;
   showManualMessage: boolean;
   setShowManualMessage: (value: boolean) => void;
-  theme: ReturnType<typeof getTheme>;
+  theme: ReturnType<typeof getEventTheme>;
 }) {
   const [registrationState, setRegistrationState] = useState<RegisterEventResult | null>(null);
   const [localRegistrationStatus, setLocalRegistrationStatus] = useState(registrationStatus);

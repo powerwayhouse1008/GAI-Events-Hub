@@ -2,23 +2,8 @@ import Link from "next/link";
 import { CalendarDays, ChevronLeft, MapPin, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LocalizedEventText } from "@/components/LocalizedEventText";
+import { archiveEventColumns, eventCategories, eventRegions, formatTokyoDateTime } from "@/lib/events";
 import type { Event } from "@/lib/types";
-
-const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
-const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
-const archiveEventColumns = "id,title,description,category,region,location,cover_url,starts_at,ends_at";
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Tokyo"
-  });
-}
 
 function isPastEvent(event: Event) {
   const end = event.ends_at || event.starts_at;
@@ -59,7 +44,7 @@ function EventArchiveCard({ event }: { event: Event }) {
         </p>
         <div className="grid gap-2 text-sm font-bold text-slate-300 md:grid-cols-2">
           <p className="flex items-center gap-2">
-            <CalendarDays size={16} /> {formatDate(event.starts_at)}
+            <CalendarDays size={16} /> {formatTokyoDateTime(event.starts_at)}
           </p>
           <p className="flex items-center gap-2">
             <MapPin size={16} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
@@ -119,13 +104,13 @@ export default async function AllEventsPage({
           />
           <select className="rounded-full bg-[#121429] px-4 py-3 text-white outline-none" name="category" defaultValue={sp.category || ""}>
             <option value="">Category</option>
-            {categories.map((category) => (
+            {eventCategories.map((category) => (
               <option key={category}>{category}</option>
             ))}
           </select>
           <select className="rounded-full bg-[#121429] px-4 py-3 text-white outline-none" name="region" defaultValue={sp.region || ""}>
             <option value="">Region</option>
-            {regions.map((region) => (
+            {eventRegions.map((region) => (
               <option key={region}>{region}</option>
             ))}
           </select>

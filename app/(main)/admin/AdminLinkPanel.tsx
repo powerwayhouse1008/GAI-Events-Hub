@@ -1,40 +1,17 @@
 "use client";
 
 import { Save } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { footerLinkItems, footerLinkStorageKey, type FooterLinkKey } from "@/lib/footer-links";
-
-type FooterLinkMap = Record<string, string>;
-
-function normalizeUrl(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-}
-
-function getDefaultLinks(): FooterLinkMap {
-  return Object.fromEntries(footerLinkItems.map((item) => [item.key, item.defaultUrl]));
-}
+import { useMemo, useState } from "react";
+import { footerLinkItems, footerLinkStorageKey, normalizeFooterUrl, readStoredFooterLinks, type FooterLinkKey } from "@/lib/footer-links";
 
 export function AdminLinkPanel() {
-  const [links, setLinks] = useState<FooterLinkMap>(getDefaultLinks);
+  const [links, setLinks] = useState(readStoredFooterLinks);
   const [activeKey, setActiveKey] = useState<FooterLinkKey>(footerLinkItems[0].key);
   const [savedMessage, setSavedMessage] = useState("");
-  const safeActiveUrl = useMemo(() => normalizeUrl(links[activeKey] || ""), [activeKey, links]);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(footerLinkStorageKey);
-    if (saved) {
-      try {
-        setLinks({ ...getDefaultLinks(), ...(JSON.parse(saved) as FooterLinkMap) });
-      } catch {
-        setLinks(getDefaultLinks());
-      }
-    }
-  }, []);
+  const safeActiveUrl = useMemo(() => normalizeFooterUrl(links[activeKey] || ""), [activeKey, links]);
 
   function saveLinks() {
-    const normalizedLinks = Object.fromEntries(Object.entries(links).map(([key, value]) => [key, normalizeUrl(value)]));
+    const normalizedLinks = Object.fromEntries(Object.entries(links).map(([key, value]) => [key, normalizeFooterUrl(value)]));
     setLinks(normalizedLinks);
     window.localStorage.setItem(footerLinkStorageKey, JSON.stringify(normalizedLinks));
     setSavedMessage("保存しました");

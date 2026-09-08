@@ -3,85 +3,12 @@ import { CalendarDays, ChevronRight, MapPin, Plus, Search, Sparkles, Users } fro
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { LocalizedEventText } from "@/components/LocalizedEventText";
+import { eventCategories, eventListColumns, eventRegions, formatTokyoDate, formatTokyoTimeRange, getEventTheme } from "@/lib/events";
 import type { Event } from "@/lib/types";
 
 type EventWithCount = Event & {
   attendeeCount: number;
 };
-
-const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
-const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
-const eventListColumns =
-  "id,title,description,category,region,location,organizer_name,cover_url,theme_color,starts_at,ends_at,featured";
-
-const themeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string }> = {
-  purple: {
-    border: "border-violet-300/30",
-    badge: "text-violet-200",
-    glow: "shadow-violet-950/35",
-    gradient: "from-violet-600 via-purple-500 to-fuchsia-500",
-    soft: "from-violet-400/18 to-fuchsia-400/10"
-  },
-  blue: {
-    border: "border-cyan-300/25",
-    badge: "text-cyan-200",
-    glow: "shadow-cyan-950/20",
-    gradient: "from-blue-500 to-cyan-400",
-    soft: "from-blue-400/18 to-cyan-300/10"
-  },
-  green: {
-    border: "border-emerald-300/25",
-    badge: "text-emerald-200",
-    glow: "shadow-emerald-950/20",
-    gradient: "from-emerald-500 to-teal-400",
-    soft: "from-emerald-400/18 to-teal-300/10"
-  },
-  amber: {
-    border: "border-amber-300/25",
-    badge: "text-amber-200",
-    glow: "shadow-amber-950/20",
-    gradient: "from-amber-400 to-orange-500",
-    soft: "from-amber-300/18 to-orange-400/10"
-  },
-  rose: {
-    border: "border-rose-300/25",
-    badge: "text-rose-200",
-    glow: "shadow-rose-950/20",
-    gradient: "from-rose-500 to-pink-500",
-    soft: "from-rose-400/18 to-pink-300/10"
-  }
-};
-
-function getTheme(event?: Event | null) {
-  return themeStyles[event?.theme_color || "purple"] || themeStyles.purple;
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    timeZone: "Asia/Tokyo"
-  });
-}
-
-function formatTimeRange(event: Event) {
-  const start = new Date(event.starts_at).toLocaleTimeString("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Tokyo"
-  });
-  const end = event.ends_at
-    ? new Date(event.ends_at).toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Tokyo"
-      })
-    : "";
-
-  return end ? `${start} - ${end}` : start;
-}
 
 function dateParts(value: string) {
   const date = new Date(value);
@@ -122,7 +49,7 @@ async function withAttendeeCounts(events: Event[]) {
 }
 
 function TimelineEventBody({ event }: { event: EventWithCount }) {
-  const theme = getTheme(event);
+  const theme = getEventTheme(event);
 
   return (
     <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`} data-no-translate>
@@ -137,7 +64,7 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
           </h3>
           <div className="mt-4 grid gap-2 text-sm text-slate-300">
             <p className="flex items-center gap-2">
-              <CalendarDays size={16} /> {formatDate(event.starts_at)} {formatTimeRange(event)}
+              <CalendarDays size={16} /> {formatTokyoDate(event.starts_at)} {formatTokyoTimeRange(event)}
             </p>
             <p className="flex items-center gap-2">
               <MapPin size={16} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
@@ -156,7 +83,7 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
 }
 
 function TimelineCard({ event, side }: { event: EventWithCount; side: "left" | "right" }) {
-  const theme = getTheme(event);
+  const theme = getEventTheme(event);
   const parts = dateParts(event.starts_at);
   const isRight = side === "right";
 
@@ -181,7 +108,7 @@ function TimelineCard({ event, side }: { event: EventWithCount; side: "left" | "
 }
 
 function EventGridCard({ event }: { event: EventWithCount }) {
-  const theme = getTheme(event);
+  const theme = getEventTheme(event);
 
   return (
     <Link href={`/events/${event.id}`} className={`group overflow-hidden rounded-2xl border ${theme.border} bg-white/[0.07] shadow-lg ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.1]`} data-no-translate>
@@ -200,7 +127,7 @@ function EventGridCard({ event }: { event: EventWithCount }) {
         </h3>
         <div className="mt-4 grid gap-2 text-sm text-slate-300">
           <p className="flex items-center gap-2">
-            <CalendarDays size={15} /> {formatDate(event.starts_at)}
+            <CalendarDays size={15} /> {formatTokyoDate(event.starts_at)}
           </p>
           <p className="flex items-center gap-2">
             <MapPin size={15} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
@@ -239,7 +166,7 @@ export default async function EventsPage({
   const allEvents = await withAttendeeCounts((rawEvents || []) as Event[]);
   const timelineEvents = allEvents.slice(0, 2);
   const featuredEvent = allEvents.find((event) => event.featured) || allEvents[0];
-  const featuredTheme = getTheme(featuredEvent);
+  const featuredTheme = getEventTheme(featuredEvent);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#080a14] text-white">
@@ -260,13 +187,13 @@ export default async function EventsPage({
               <input className="rounded-2xl bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-400 focus:bg-white/15" name="q" defaultValue={sp.q} placeholder="Search events..." />
               <select className="rounded-2xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="category" defaultValue={sp.category || ""}>
                 <option value="">Category</option>
-                {categories.map((category) => (
+                {eventCategories.map((category) => (
                   <option key={category}>{category}</option>
                 ))}
               </select>
               <select className="rounded-2xl border border-white/10 bg-[#111522] px-4 py-3 text-white outline-none" name="region" defaultValue={sp.region || ""}>
                 <option value="">Region</option>
-                {regions.map((region) => (
+                {eventRegions.map((region) => (
                   <option key={region}>{region}</option>
                 ))}
               </select>
@@ -332,7 +259,7 @@ export default async function EventsPage({
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">
               <span className="rounded-xl bg-white/10 px-3 py-2">
-                <CalendarDays className="mr-1 inline h-4 w-4" /> {formatDate(featuredEvent.starts_at)}
+                <CalendarDays className="mr-1 inline h-4 w-4" /> {formatTokyoDate(featuredEvent.starts_at)}
               </span>
               <span className="rounded-xl bg-white/10 px-3 py-2">
                 <MapPin className="mr-1 inline h-4 w-4" /> <LocalizedEventText event={featuredEvent} field="location" fallback={featuredEvent.region || "Online"} />

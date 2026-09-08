@@ -19,3 +19,27 @@ export const footerLinkItems = [
 ] as const;
 
 export type FooterLinkKey = (typeof footerLinkItems)[number]["key"];
+export type FooterLinkMap = Record<string, string>;
+
+export function normalizeFooterUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+export function getDefaultFooterLinks(): FooterLinkMap {
+  return Object.fromEntries(footerLinkItems.map((item) => [item.key, item.defaultUrl]));
+}
+
+export function readStoredFooterLinks() {
+  if (typeof window === "undefined") return getDefaultFooterLinks();
+
+  const saved = window.localStorage.getItem(footerLinkStorageKey);
+  if (!saved) return getDefaultFooterLinks();
+
+  try {
+    return { ...getDefaultFooterLinks(), ...(JSON.parse(saved) as FooterLinkMap) };
+  } catch {
+    return getDefaultFooterLinks();
+  }
+}

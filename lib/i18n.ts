@@ -124,6 +124,18 @@ const phraseSets: TranslationEntry[] = [
 ];
 
 const phraseMap = new Map<string, TranslationSet>();
+const orderedPhraseSources = phraseSets
+  .map((set) => ({
+    set,
+    sources: [...Object.values(set).filter((item): item is string => typeof item === "string"), ...(set.sources || [])].sort(
+      (left, right) => right.length - left.length
+    )
+  }))
+  .sort((left, right) => {
+    const leftMax = Math.max(...left.sources.map((item) => item.length));
+    const rightMax = Math.max(...right.sources.map((item) => item.length));
+    return rightMax - leftMax;
+  });
 
 for (const set of phraseSets) {
   const values = [...Object.values(set).filter((value): value is string => typeof value === "string"), ...(set.sources || [])];
@@ -144,16 +156,7 @@ export function translatePhrase(value: string, language: LanguageCode) {
   if (exact) return value.replace(trimmed, exact[language]);
 
   let translated = trimmed;
-  const orderedSets = [...phraseSets].sort((left, right) => {
-    const leftValues = [...Object.values(left).filter((item): item is string => typeof item === "string"), ...(left.sources || [])];
-    const rightValues = [...Object.values(right).filter((item): item is string => typeof item === "string"), ...(right.sources || [])];
-    return Math.max(...rightValues.map((item) => item.length)) - Math.max(...leftValues.map((item) => item.length));
-  });
-
-  for (const set of orderedSets) {
-    const sources = [...Object.values(set).filter((item): item is string => typeof item === "string"), ...(set.sources || [])].sort(
-      (left, right) => right.length - left.length
-    );
+  for (const { set, sources } of orderedPhraseSources) {
     for (const source of sources) {
       if (!source || source === set[language]) continue;
       translated = translated.split(source).join(set[language]);
