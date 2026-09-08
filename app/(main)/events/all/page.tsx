@@ -6,7 +6,7 @@ import type { Event } from "@/lib/types";
 
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
-const archiveEventColumns = "id,title,title_i18n,description,description_i18n,category,region,location,location_i18n,cover_url,starts_at,ends_at";
+const archiveEventColumns = "id,title,description,category,region,location,cover_url,starts_at,ends_at";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("ja-JP", {

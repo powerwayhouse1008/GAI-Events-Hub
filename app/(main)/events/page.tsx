@@ -12,7 +12,7 @@ type EventWithCount = Event & {
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
 const eventListColumns =
-  "id,title,title_i18n,description,description_i18n,category,region,location,location_i18n,organizer_name,organizer_name_i18n,creator_name,creator_name_i18n,cover_url,theme_color,starts_at,ends_at,featured";
+  "id,title,description,category,region,location,organizer_name,cover_url,theme_color,starts_at,ends_at,featured";
 
 const themeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string }> = {
   purple: {
