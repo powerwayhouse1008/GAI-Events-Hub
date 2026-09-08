@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { getFooterLinks } from "@/lib/footer-link-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminLinkPanel } from "./AdminLinkPanel";
 
@@ -11,6 +12,7 @@ export default async function AdminPage() {
     .from("events")
     .select("id", { count: "exact", head: true })
     .eq("status", "pending");
+  const footerLinks = await getFooterLinks();
 
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
@@ -31,7 +33,7 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      <AdminLinkPanel />
+      <AdminLinkPanel initialLinks={footerLinks} />
     </main>
   );
 }

@@ -116,6 +116,13 @@ create table if not exists public.event_comment_restrictions (
   unique(event_id, user_id)
 );
 
+create table if not exists public.site_footer_links (
+  key text primary key,
+  label text not null,
+  url text not null,
+  updated_at timestamptz not null default now()
+);
+
 -- Add columns/checks when this file is run over an older schema.
 alter table public.profiles
   add column if not exists email text,
@@ -164,6 +171,11 @@ alter table public.event_comments
   add column if not exists hidden boolean not null default false,
   add column if not exists hidden_by uuid references public.profiles(id) on delete set null,
   add column if not exists hidden_at timestamptz,
+  add column if not exists updated_at timestamptz not null default now();
+
+alter table public.site_footer_links
+  add column if not exists label text not null default '',
+  add column if not exists url text not null default '',
   add column if not exists updated_at timestamptz not null default now();
 
 -- Helpful indexes for lists/detail dashboards.
@@ -394,6 +406,7 @@ alter table public.event_notifications enable row level security;
 alter table public.event_votes enable row level security;
 alter table public.event_comments enable row level security;
 alter table public.event_comment_restrictions enable row level security;
+alter table public.site_footer_links enable row level security;
 
 -- Profiles
 -- Members can read themselves. Admins can read everyone. Event organizers can read
@@ -639,6 +652,19 @@ to authenticated
 using (public.is_event_organizer(event_id, auth.uid()) or public.is_admin(auth.uid()))
 with check (public.is_event_organizer(event_id, auth.uid()) or public.is_admin(auth.uid()));
 
+drop policy if exists "site footer links public read" on public.site_footer_links;
+create policy "site footer links public read"
+on public.site_footer_links for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "admins manage site footer links" on public.site_footer_links;
+create policy "admins manage site footer links"
+on public.site_footer_links for all
+to authenticated
+using (public.is_admin(auth.uid()))
+with check (public.is_admin(auth.uid()));
+
 drop policy if exists "organizers upload documents" on public.event_documents;
 create policy "organizers upload documents"
 on public.event_documents for insert
@@ -752,6 +778,7 @@ using (bucket_id = 'event-documents');
 -- -----------------------------------------------------------------------------
 grant usage on schema public to anon, authenticated;
 grant select on public.events to anon;
+grant select on public.site_footer_links to anon;
 grant select, insert, update, delete on public.profiles to authenticated;
 grant select, insert, update, delete on public.events to authenticated;
 grant select, insert, update, delete on public.registrations to authenticated;
@@ -761,6 +788,7 @@ grant select, insert, update, delete on public.event_notifications to authentica
 grant select, insert, update, delete on public.event_votes to authenticated;
 grant select, insert, update, delete on public.event_comments to authenticated;
 grant select, insert, update, delete on public.event_comment_restrictions to authenticated;
+grant select, insert, update, delete on public.site_footer_links to authenticated;
 grant execute on function public.is_admin(uuid) to anon, authenticated;
 grant execute on function public.is_approved_organizer(uuid) to anon, authenticated;
 grant execute on function public.is_event_organizer(uuid, uuid) to anon, authenticated;

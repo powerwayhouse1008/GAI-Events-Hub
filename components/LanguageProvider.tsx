@@ -1,8 +1,23 @@
 "use client";
 
+import Script from "next/script";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, Languages } from "lucide-react";
-import { getLanguage, languages, translatePhrase, type LanguageCode } from "@/lib/i18n";
+import { getLanguage, languages, type LanguageCode } from "@/lib/i18n";
+
+declare global {
+  interface Window {
+    googleTranslateElementInit?: () => void;
+    google?: {
+      translate?: {
+        TranslateElement?: new (
+          options: { pageLanguage: string; includedLanguages: string; autoDisplay: boolean },
+          elementId: string
+        ) => void;
+      };
+    };
+  }
+}
 
 type LanguageContextValue = {
   language: LanguageCode;
@@ -10,106 +25,63 @@ type LanguageContextValue = {
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
-const originalText = new WeakMap<Text, string>();
-const originalPlaceholder = new WeakMap<HTMLInputElement | HTMLTextAreaElement, string>();
-const originalAttributes = new WeakMap<Element, Map<string, string>>();
-const translatableAttributes = ["aria-label", "title"] as const;
-let isApplyingTranslations = false;
 
-function applyTranslations(language: LanguageCode) {
-  isApplyingTranslations = true;
+function setGoogleTranslateCookie(language: LanguageCode) {
+  const value = language === "ja" ? "" : `/ja/${language === "zh" ? "zh-CN" : language}`;
+  const maxAge = language === "ja" ? "Max-Age=0" : "Max-Age=31536000";
 
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      const parent = node.parentElement;
-      if (!parent || parent.closest("[data-no-translate],script,style,textarea,noscript")) return NodeFilter.FILTER_REJECT;
-      if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
-      if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    }
-  });
+  document.cookie = `googtrans=${value}; path=/; ${maxAge}; SameSite=Lax`;
+  document.cookie = `googtrans=${value}; path=/; domain=${window.location.hostname}; ${maxAge}; SameSite=Lax`;
+}
 
-  const textNodes: Text[] = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-
-  for (const node of textNodes) {
-    if (!originalText.has(node)) originalText.set(node, node.textContent || "");
-    const nextText = translatePhrase(originalText.get(node) || "", language);
-    if (node.textContent !== nextText) node.textContent = nextText;
-  }
-
-  const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input[placeholder], textarea[placeholder]");
-  fields.forEach((field) => {
-    if (field.closest("[data-no-translate]")) return;
-    if (!originalPlaceholder.has(field)) originalPlaceholder.set(field, field.placeholder);
-    const nextPlaceholder = translatePhrase(originalPlaceholder.get(field) || "", language);
-    if (field.placeholder !== nextPlaceholder) field.placeholder = nextPlaceholder;
-  });
-
-  const attributeElements = document.querySelectorAll<HTMLElement>(
-    translatableAttributes.map((attribute) => `[${attribute}]`).join(",")
-  );
-  attributeElements.forEach((element) => {
-    if (element.closest("[data-no-translate]")) return;
-    if (!originalAttributes.has(element)) originalAttributes.set(element, new Map());
-    const originals = originalAttributes.get(element)!;
-
-    translatableAttributes.forEach((attribute) => {
-      const value = element.getAttribute(attribute);
-      if (!value?.trim()) return;
-      if (!originals.has(attribute)) originals.set(attribute, value);
-      const nextValue = translatePhrase(originals.get(attribute) || "", language);
-      if (value !== nextValue) element.setAttribute(attribute, nextValue);
-    });
-  });
-
-  window.requestAnimationFrame(() => {
-    isApplyingTranslations = false;
-  });
+function getStoredLanguage() {
+  if (typeof window === "undefined") return "ja";
+  return getLanguage(window.localStorage.getItem("site-language"));
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>(() => {
-    if (typeof window === "undefined") return "ja";
-    return getLanguage(window.localStorage.getItem("site-language"));
-  });
+  const [language, setLanguageState] = useState<LanguageCode>(getStoredLanguage);
 
   useEffect(() => {
     const htmlLang = languages.find((item) => item.code === language)?.htmlLang || "ja";
-    let frame = 0;
-
-    const scheduleTranslations = () => {
-      if (isApplyingTranslations || frame) return;
-      frame = window.requestAnimationFrame(() => {
-        frame = 0;
-        applyTranslations(language);
-      });
-    };
-
     document.documentElement.lang = htmlLang;
     document.documentElement.dataset.language = language;
     window.localStorage.setItem("site-language", language);
-    scheduleTranslations();
-
-    const observer = new MutationObserver(scheduleTranslations);
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-
-    return () => {
-      observer.disconnect();
-      if (frame) window.cancelAnimationFrame(frame);
-    };
   }, [language]);
+
+  useEffect(() => {
+    window.googleTranslateElementInit = () => {
+      const TranslateElement = window.google?.translate?.TranslateElement;
+      if (!TranslateElement) return;
+
+      new TranslateElement(
+        {
+          pageLanguage: "ja",
+          includedLanguages: languages.map((item) => (item.code === "zh" ? "zh-CN" : item.code)).join(","),
+          autoDisplay: false
+        },
+        "google_translate_element"
+      );
+    };
+  }, []);
 
   const value = useMemo(
     () => ({
       language,
-      setLanguage: (nextLanguage: LanguageCode) => setLanguageState(nextLanguage)
+      setLanguage: (nextLanguage: LanguageCode) => {
+        setLanguageState(nextLanguage);
+        setGoogleTranslateCookie(nextLanguage);
+        window.localStorage.setItem("site-language", nextLanguage);
+        window.location.reload();
+      }
     }),
     [language]
   );
 
   return (
     <LanguageContext.Provider value={value}>
+      <Script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" strategy="afterInteractive" />
+      <div id="google_translate_element" className="hidden" />
       {children}
       <LanguageSwitcher />
     </LanguageContext.Provider>
@@ -129,12 +101,11 @@ function LanguageSwitcher() {
 
   return (
     <aside
-      className="fixed bottom-4 right-4 z-[100] w-32 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-900/15 backdrop-blur"
-      aria-label={translatePhrase("Language", language)}
-      data-no-translate
+      className="fixed right-4 top-4 z-[100] w-32 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-900/15 backdrop-blur"
+      aria-label="Language"
     >
       {open && (
-        <div className="absolute bottom-[calc(100%+0.5rem)] right-0 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/15 backdrop-blur">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/15 backdrop-blur">
           <div className="max-h-52 overflow-y-auto pr-0.5">
             {languages.map((item) => {
               const selected = item.code === language;
@@ -165,7 +136,7 @@ function LanguageSwitcher() {
         type="button"
         className="flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-3 text-sm font-black text-slate-800 transition hover:bg-slate-100"
         aria-expanded={open}
-        aria-label={translatePhrase("Language", language)}
+        aria-label="Language"
         onClick={() => setOpen((value) => !value)}
       >
         <span className="flex items-center gap-2">

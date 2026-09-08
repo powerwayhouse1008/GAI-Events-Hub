@@ -43,3 +43,13 @@ export function readStoredFooterLinks() {
     return getDefaultFooterLinks();
   }
 }
+
+export function mergeFooterLinks(links: Partial<FooterLinkMap> | null | undefined) {
+  const merged = getDefaultFooterLinks();
+
+  Object.entries(links || {}).forEach(([key, value]) => {
+    if (typeof value === "string") merged[key] = value;
+  });
+
+  return merged;
+}

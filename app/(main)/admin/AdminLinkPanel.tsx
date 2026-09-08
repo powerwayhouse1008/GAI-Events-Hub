@@ -2,19 +2,29 @@
 
 import { Save } from "lucide-react";
 import { useMemo, useState } from "react";
-import { footerLinkItems, footerLinkStorageKey, normalizeFooterUrl, readStoredFooterLinks, type FooterLinkKey } from "@/lib/footer-links";
+import { saveFooterLinks } from "@/app/(main)/admin/footerLinkActions";
+import { footerLinkItems, normalizeFooterUrl, type FooterLinkKey, type FooterLinkMap } from "@/lib/footer-links";
 
-export function AdminLinkPanel() {
-  const [links, setLinks] = useState(readStoredFooterLinks);
+export function AdminLinkPanel({ initialLinks }: { initialLinks: FooterLinkMap }) {
+  const [links, setLinks] = useState(initialLinks);
   const [activeKey, setActiveKey] = useState<FooterLinkKey>(footerLinkItems[0].key);
   const [savedMessage, setSavedMessage] = useState("");
+  const [saving, setSaving] = useState(false);
   const safeActiveUrl = useMemo(() => normalizeFooterUrl(links[activeKey] || ""), [activeKey, links]);
 
-  function saveLinks() {
+  async function saveLinks() {
+    setSaving(true);
     const normalizedLinks = Object.fromEntries(Object.entries(links).map(([key, value]) => [key, normalizeFooterUrl(value)]));
-    setLinks(normalizedLinks);
-    window.localStorage.setItem(footerLinkStorageKey, JSON.stringify(normalizedLinks));
-    setSavedMessage("保存しました");
+    const result = await saveFooterLinks(normalizedLinks);
+    setSaving(false);
+
+    if (result.ok) {
+      setLinks(normalizedLinks);
+      setSavedMessage("保存しました");
+      return;
+    }
+
+    setSavedMessage(`保存できませんでした: ${result.message}`);
   }
 
   return (
@@ -22,10 +32,10 @@ export function AdminLinkPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black">リンク管理</h2>
-          <p className="mt-1 text-sm font-bold text-slate-500">Footerの各項目にWebリンクを割り当てて保存できます。</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">Footer の各項目に Web リンクを割り当てて保存できます。</p>
         </div>
-        <button className="btn btn-primary" onClick={saveLinks} type="button">
-          <Save size={17} /> 保存
+        <button className="btn btn-primary" disabled={saving} onClick={saveLinks} type="button">
+          <Save size={17} /> {saving ? "保存中..." : "保存"}
         </button>
       </div>
 
