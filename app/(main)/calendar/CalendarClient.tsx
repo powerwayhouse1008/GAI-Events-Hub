@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, Grid3X3, List, MapPin } from "lucide-react";
 import { useLanguage } from "@/components/LanguageProvider";
+import { pickLocalized } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/i18n";
 import type { Event } from "@/lib/types";
 
@@ -222,7 +223,7 @@ function MonthCell({
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {cell.events.slice(0, 4).map((event) => (
-          <Link key={event.id} href={`/events/${event.id}`} title={event.title} aria-label={event.title} className="transition hover:-translate-y-0.5">
+          <Link key={event.id} href={`/events/${event.id}`} title={event.title} aria-label={event.title} className="transition hover:-translate-y-0.5" data-no-translate>
             <EventLogo event={event} />
           </Link>
         ))}
@@ -234,7 +235,7 @@ function MonthCell({
       </div>
 
       {cell.events[0] && (
-        <Link href={`/events/${cell.events[0].id}`} className="mt-2 line-clamp-2 block text-xs font-bold leading-5 text-slate-700 hover:text-emerald-700">
+        <Link href={`/events/${cell.events[0].id}`} className="mt-2 line-clamp-2 block text-xs font-bold leading-5 text-slate-700 hover:text-emerald-700" data-no-translate>
           {cell.events[0].title}
         </Link>
       )}
@@ -269,6 +270,7 @@ function WeekView({ days, labels, locale }: { days: DayCell[]; labels: (typeof c
                     <Link
                       href={`/events/${event.id}`}
                       className="flex h-full gap-3 rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-3 shadow-lg shadow-violet-950/[0.06] transition duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-xl hover:shadow-violet-950/10"
+                      data-no-translate
                     >
                       <EventLogo event={event} large />
                       <span className="min-w-0">
@@ -297,7 +299,16 @@ export function CalendarClient({ events }: { events: Event[] }) {
   const labels = copy[language];
   const [view, setView] = useState<ViewMode>("month");
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
-  const grouped = useMemo(() => groupEventsByDay(events), [events]);
+  const localizedEvents = useMemo(
+    () =>
+      events.map((event) => ({
+        ...event,
+        title: pickLocalized(event.title_i18n ?? event.title, language),
+        location: pickLocalized(event.location_i18n ?? event.location, language) || null
+      })),
+    [events, language]
+  );
+  const grouped = useMemo(() => groupEventsByDay(localizedEvents), [localizedEvents]);
   const monthCells = useMemo(() => getMonthCells(selectedDate, grouped), [selectedDate, grouped]);
   const weekCells = useMemo(() => getWeekCells(selectedDate, grouped), [selectedDate, grouped]);
   const monthTitle = `${labels.months[selectedDate.getMonth()]} - ${selectedDate.getFullYear()}`;
@@ -410,7 +421,7 @@ export function CalendarClient({ events }: { events: Event[] }) {
           </div>
         )}
 
-        {events.length ? (
+        {localizedEvents.length ? (
           view === "month" ? (
             <>
               <div className="grid grid-cols-7 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-emerald-50/70">

@@ -26,6 +26,7 @@ import { AnnouncementForm } from "@/components/AnnouncementForm";
 import { AnnouncementsList } from "@/components/AnnouncementsList";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentsList } from "@/components/DocumentsList";
+import { useLocalizedEvent } from "@/components/LocalizedEventText";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
 import {
@@ -204,21 +205,22 @@ export function EventDetailClient({
   engagement: initialEngagement,
   registrationStatus
 }: EventDetailClientProps) {
+  const localizedEvent = useLocalizedEvent(event);
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [documents, setDocuments] = useState(initialDocuments);
   const [participants, setParticipants] = useState(initialParticipants);
   const [engagement, setEngagement] = useState(initialEngagement);
   const [showManualMessage, setShowManualMessage] = useState(false);
   const [activeManagerModal, setActiveManagerModal] = useState<"announcement" | "document" | null>(null);
-  const theme = getTheme(event);
-  const isManualReview = event.approval_mode === "manual";
+  const theme = getTheme(localizedEvent);
+  const isManualReview = localizedEvent.approval_mode === "manual";
   const canEngage = registrationStatus === "approved";
   const approvedCount = participants.filter((participant: any) => participant.status === "approved").length;
 
-  const refreshAnnouncements = async () => setAnnouncements(await getAnnouncements(event.id));
-  const refreshDocuments = async () => setDocuments(await getEventDocuments(event.id));
-  const refreshParticipants = async () => setParticipants(await getEventParticipants(event.id));
-  const refreshEngagement = async () => setEngagement(await getEventEngagement(event.id));
+  const refreshAnnouncements = async () => setAnnouncements(await getAnnouncements(localizedEvent.id));
+  const refreshDocuments = async () => setDocuments(await getEventDocuments(localizedEvent.id));
+  const refreshParticipants = async () => setParticipants(await getEventParticipants(localizedEvent.id));
+  const refreshEngagement = async () => setEngagement(await getEventEngagement(localizedEvent.id));
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#061319] text-white">
@@ -230,9 +232,9 @@ export function EventDetailClient({
           {isOrganizer && (
             <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border ${theme.border} bg-white/[0.08] p-4 shadow-xl ${theme.glow} backdrop-blur`}>
               <p className="text-sm font-bold text-slate-200">
-                このイベントを管理できます。現在の状態: <span className={theme.badge}>{statusLabel[event.status] || event.status}</span>
+                このイベントを管理できます。現在の状態: <span className={theme.badge}>{statusLabel[localizedEvent.status] || localizedEvent.status}</span>
               </p>
-              <Link href={`/events/${event.id}/edit`} className={`btn bg-gradient-to-r ${theme.gradient} text-white`}>
+              <Link href={`/events/${localizedEvent.id}/edit`} className={`btn bg-gradient-to-r ${theme.gradient} text-white`}>
                 <Edit3 size={17} /> イベント編集
               </Link>
             </div>
@@ -240,14 +242,14 @@ export function EventDetailClient({
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_420px]">
             <section className="min-w-0">
-              <HeroBlock event={event} theme={theme} />
+              <HeroBlock event={localizedEvent} theme={theme} />
 
               <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="min-w-0">
                   <ParticipantTimeline announcements={announcements} theme={theme} />
                   <ParticipantDocuments documents={documents} theme={theme} />
                   <EventEngagementPanel
-                    eventId={event.id}
+                    eventId={localizedEvent.id}
                     profile={profile}
                     isOrganizer={isOrganizer}
                     canEngage={canEngage}
@@ -264,18 +266,18 @@ export function EventDetailClient({
                   <h2 className="mt-5 text-2xl font-black">イベント情報</h2>
 
                   <div className="mt-6 grid gap-3">
-                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatDate(event.starts_at)} />
-                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTimeRange(event)} />
-                    <InfoRow icon={<MapPin size={18} />} label="場所" value={event.location || event.region || "オンライン / 未定"} />
-                    <InfoRow icon={<Ticket size={18} />} label="価格" value={event.ticket_price ? `¥${event.ticket_price}` : "無料"} />
+                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatDate(localizedEvent.starts_at)} />
+                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTimeRange(localizedEvent)} />
+                    <InfoRow icon={<MapPin size={18} />} label="場所" value={localizedEvent.location || localizedEvent.region || "オンライン / 未定"} />
+                    <InfoRow icon={<Ticket size={18} />} label="価格" value={localizedEvent.ticket_price ? `¥${localizedEvent.ticket_price}` : "無料"} />
                     <InfoRow icon={<Users size={18} />} label="参加承認" value={isManualReview ? "手動承認" : "自動承認"} />
                     <InfoRow icon={<CheckCircle2 size={18} />} label="承認済み" value={`${approvedCount} 名`} />
                   </div>
 
-                  {event.online_url && (
-                    <a className={`mt-5 flex items-center gap-2 break-all rounded-[8px] border ${theme.border} bg-white/10 p-4 text-sm font-bold ${theme.badge}`} href={event.online_url}>
+                  {localizedEvent.online_url && (
+                    <a className={`mt-5 flex items-center gap-2 break-all rounded-[8px] border ${theme.border} bg-white/10 p-4 text-sm font-bold ${theme.badge}`} href={localizedEvent.online_url}>
                       <ExternalLink className="h-4 w-4 shrink-0" />
-                      {event.online_url}
+                      {localizedEvent.online_url}
                     </a>
                   )}
 
@@ -287,16 +289,16 @@ export function EventDetailClient({
                   <section className={`rounded-[8px] border ${theme.border} bg-white/[0.06] p-6 shadow-xl ${theme.glow} backdrop-blur`}>
                     <h2 className="text-2xl font-black">イベント進行状況</h2>
                     <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <StatCard label="開始日時" value={formatDateTime(event.starts_at)} />
+                      <StatCard label="開始日時" value={formatDateTime(localizedEvent.starts_at)} />
                       <StatCard label="申込数" value={String(participants.length)} strong />
                       <StatCard label="承認済み" value={String(approvedCount)} strong />
-                      <StatCard label="定員" value={event.capacity ? String(event.capacity) : "無制限"} strong />
+                      <StatCard label="定員" value={localizedEvent.capacity ? String(localizedEvent.capacity) : "無制限"} strong />
                     </div>
                   </section>
 
                   <ManagementSection title="通知・更新">
                     <AnnouncementForm
-                      eventId={event.id}
+                      eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "announcement"}
                       onOpenChange={(open) => setActiveManagerModal(open ? "announcement" : null)}
                       onSuccess={refreshAnnouncements}
@@ -306,7 +308,7 @@ export function EventDetailClient({
 
                   <ManagementSection title="資料・画像">
                     <DocumentUpload
-                      eventId={event.id}
+                      eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "document"}
                       onOpenChange={(open) => setActiveManagerModal(open ? "document" : null)}
                       onSuccess={refreshDocuments}
@@ -322,7 +324,7 @@ export function EventDetailClient({
                     <button onClick={refreshParticipants} className="btn border border-white/15 bg-white/10 text-white hover:bg-white/15" type="button">
                       参加者を更新
                     </button>
-                    <ParticipantsList participants={participants} totalCapacity={event.capacity} />
+                    <ParticipantsList participants={participants} totalCapacity={localizedEvent.capacity} />
                   </ManagementSection>
                 </div>
               )}
@@ -341,7 +343,7 @@ export function EventDetailClient({
       </section>
 
       <RegistrationAction
-        event={event}
+        event={localizedEvent}
         profile={profile}
         isOrganizer={isOrganizer}
         registrationStatus={registrationStatus}
@@ -354,9 +356,9 @@ export function EventDetailClient({
   );
 }
 
-function HeroBlock({ event, theme }: { event: Event; theme: ReturnType<typeof getTheme> }) {
+function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }; theme: ReturnType<typeof getTheme> }) {
   return (
-    <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl">
+    <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl" data-no-translate>
       <div className="relative h-[360px] sm:h-[520px] lg:h-[640px]">
         {event.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -375,7 +377,7 @@ function HeroBlock({ event, theme }: { event: Event; theme: ReturnType<typeof ge
             </span>
           </div>
           <h1 className="mt-5 max-w-5xl whitespace-pre-wrap break-words text-4xl font-black leading-tight sm:text-6xl lg:text-7xl">{event.title}</h1>
-          <p className="mt-4 text-base font-bold text-slate-200 sm:text-lg">{event.organizer_name || "AI Event Organizer"}</p>
+          <p className="mt-4 text-base font-bold text-slate-200 sm:text-lg">{event.organizerName || event.organizer_name || "AI Event Organizer"}</p>
         </div>
       </div>
 

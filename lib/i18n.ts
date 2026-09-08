@@ -162,3 +162,20 @@ export function translatePhrase(value: string, language: LanguageCode) {
 
   return value.replace(trimmed, translated);
 }
+
+export function pickLocalized(value: unknown, locale: LanguageCode | string, fallback: LanguageCode | string = "en") {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value !== "object") return "";
+
+  const localized = value as Record<string, unknown>;
+  const candidates = [
+    localized[locale],
+    localized[fallback],
+    localized.ja,
+    localized.zh,
+    ...Object.values(localized)
+  ];
+
+  return String(candidates.find((item) => typeof item === "string" && item.trim()) || "");
+}

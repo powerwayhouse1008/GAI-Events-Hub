@@ -2,11 +2,14 @@ export type UserRole = "member" | "organizer" | "admin";
 export type ApprovalStatus = "none" | "pending" | "approved" | "rejected";
 export type EventStatus = "pending" | "published" | "rejected" | "draft";
 export type RegistrationStatus = "pending" | "approved" | "rejected";
+export type LocalizedText = string | Partial<Record<"ja" | "en" | "zh" | "vi", string>> | null;
 
 export type Profile = {
   id: string;
   email: string | null;
   display_name: string | null;
+  display_name_i18n?: LocalizedText;
+  name_i18n?: LocalizedText;
   avatar_url: string | null;
   company_name: string | null;
   job_title: string | null;
@@ -20,12 +23,19 @@ export type Profile = {
 export type Event = {
   id: string;
   title: string;
+  title_i18n?: LocalizedText;
   description: string | null;
+  description_i18n?: LocalizedText;
   organizer_id: string;
   organizer_name: string | null;
+  organizer_name_i18n?: LocalizedText;
+  creator_name?: string | null;
+  creator_name_i18n?: LocalizedText;
+  creator?: Pick<Profile, "display_name" | "display_name_i18n" | "name_i18n"> | null;
   category: string | null;
   region: string | null;
   location: string | null;
+  location_i18n?: LocalizedText;
   online_url: string | null;
   cover_url: string | null;
   theme_color?: string | null;

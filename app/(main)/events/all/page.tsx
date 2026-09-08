@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, MapPin, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { LocalizedEventText } from "@/components/LocalizedEventText";
 import type { Event } from "@/lib/types";
 
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
-const archiveEventColumns = "id,title,description,category,region,location,cover_url,starts_at,ends_at";
+const archiveEventColumns = "id,title,title_i18n,description,description_i18n,category,region,location,location_i18n,cover_url,starts_at,ends_at";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("ja-JP", {
@@ -31,6 +32,7 @@ function EventArchiveCard({ event }: { event: Event }) {
     <Link
       href={`/events/${event.id}`}
       className="group grid overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.07] shadow-xl backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.1] md:grid-cols-[280px_1fr]"
+      data-no-translate
     >
       <div className="h-56 overflow-hidden bg-slate-900 md:h-full">
         {event.cover_url ? (
@@ -49,14 +51,18 @@ function EventArchiveCard({ event }: { event: Event }) {
           </span>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-cyan-200">{event.category || "AI"}</span>
         </div>
-        <h2 className="text-2xl font-black leading-tight text-white">{event.title}</h2>
-        <p className="line-clamp-3 leading-7 text-slate-300">{event.description || "AI community event"}</p>
+        <h2 className="text-2xl font-black leading-tight text-white">
+          <LocalizedEventText event={event} field="title" />
+        </h2>
+        <p className="line-clamp-3 leading-7 text-slate-300">
+          <LocalizedEventText event={event} field="description" fallback="AI community event" />
+        </p>
         <div className="grid gap-2 text-sm font-bold text-slate-300 md:grid-cols-2">
           <p className="flex items-center gap-2">
             <CalendarDays size={16} /> {formatDate(event.starts_at)}
           </p>
           <p className="flex items-center gap-2">
-            <MapPin size={16} /> {event.location || event.region || "Online"}
+            <MapPin size={16} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, MapPin, Plus, Search, Sparkles, Users } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { LocalizedEventText } from "@/components/LocalizedEventText";
 import type { Event } from "@/lib/types";
 
 type EventWithCount = Event & {
@@ -11,7 +12,7 @@ type EventWithCount = Event & {
 const categories = ["AI", "Tech", "Startup", "Developer", "Seminar", "Networking", "Hackathon", "Web3", "Robotics"];
 const regions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
 const eventListColumns =
-  "id,title,description,category,region,location,cover_url,theme_color,starts_at,ends_at,featured";
+  "id,title,title_i18n,description,description_i18n,category,region,location,location_i18n,organizer_name,organizer_name_i18n,creator_name,creator_name_i18n,cover_url,theme_color,starts_at,ends_at,featured";
 
 const themeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string }> = {
   purple: {
@@ -124,20 +125,22 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
   const theme = getTheme(event);
 
   return (
-    <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`}>
+    <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`} data-no-translate>
       <div className="flex items-start gap-4">
         <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${theme.gradient} text-white shadow-lg`}>
           <Sparkles size={23} />
         </div>
         <div className="min-w-0">
           <p className={`text-xs font-black uppercase ${theme.badge}`}>{event.category || "AI"}</p>
-          <h3 className="mt-2 text-2xl font-black leading-tight text-white">{event.title}</h3>
+          <h3 className="mt-2 text-2xl font-black leading-tight text-white">
+            <LocalizedEventText event={event} field="title" />
+          </h3>
           <div className="mt-4 grid gap-2 text-sm text-slate-300">
             <p className="flex items-center gap-2">
               <CalendarDays size={16} /> {formatDate(event.starts_at)} {formatTimeRange(event)}
             </p>
             <p className="flex items-center gap-2">
-              <MapPin size={16} /> {event.location || event.region || "Online"}
+              <MapPin size={16} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
             </p>
             <p className="flex items-center gap-2">
               <Users size={16} /> {event.attendeeCount} Participants
@@ -181,7 +184,7 @@ function EventGridCard({ event }: { event: EventWithCount }) {
   const theme = getTheme(event);
 
   return (
-    <Link href={`/events/${event.id}`} className={`group overflow-hidden rounded-2xl border ${theme.border} bg-white/[0.07] shadow-lg ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.1]`}>
+    <Link href={`/events/${event.id}`} className={`group overflow-hidden rounded-2xl border ${theme.border} bg-white/[0.07] shadow-lg ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.1]`} data-no-translate>
       <div className="aspect-[16/10] overflow-hidden bg-slate-900">
         {event.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -192,13 +195,15 @@ function EventGridCard({ event }: { event: EventWithCount }) {
       </div>
       <div className="p-5">
         <p className={`text-xs font-black uppercase ${theme.badge}`}>{event.category || "AI"}</p>
-        <h3 className="mt-3 line-clamp-2 text-xl font-black text-white">{event.title}</h3>
+        <h3 className="mt-3 line-clamp-2 text-xl font-black text-white">
+          <LocalizedEventText event={event} field="title" />
+        </h3>
         <div className="mt-4 grid gap-2 text-sm text-slate-300">
           <p className="flex items-center gap-2">
             <CalendarDays size={15} /> {formatDate(event.starts_at)}
           </p>
           <p className="flex items-center gap-2">
-            <MapPin size={15} /> {event.location || event.region || "Online"}
+            <MapPin size={15} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
           </p>
           <p className="flex items-center gap-2">
             <Users size={15} /> {event.attendeeCount} Participants
@@ -319,14 +324,18 @@ export default async function EventsPage({
           </div>
           <div className="rounded-b-3xl border border-white/10 bg-white/[0.08] p-8 shadow-xl shadow-violet-950/20 backdrop-blur lg:rounded-r-3xl lg:rounded-bl-none">
             <p className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-black uppercase text-amber-200">Featured Poster</p>
-            <h2 className="mt-5 text-4xl font-black">{featuredEvent.title}</h2>
-            <p className="mt-5 line-clamp-4 leading-8 text-slate-300">{featuredEvent.description || "AI community event"}</p>
+            <h2 className="mt-5 text-4xl font-black" data-no-translate>
+              <LocalizedEventText event={featuredEvent} field="title" />
+            </h2>
+            <p className="mt-5 line-clamp-4 leading-8 text-slate-300" data-no-translate>
+              <LocalizedEventText event={featuredEvent} field="description" fallback="AI community event" />
+            </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">
               <span className="rounded-xl bg-white/10 px-3 py-2">
                 <CalendarDays className="mr-1 inline h-4 w-4" /> {formatDate(featuredEvent.starts_at)}
               </span>
               <span className="rounded-xl bg-white/10 px-3 py-2">
-                <MapPin className="mr-1 inline h-4 w-4" /> {featuredEvent.location || featuredEvent.region || "Online"}
+                <MapPin className="mr-1 inline h-4 w-4" /> <LocalizedEventText event={featuredEvent} field="location" fallback={featuredEvent.region || "Online"} />
               </span>
               <span className="rounded-xl bg-white/10 px-3 py-2">
                 <Users className="mr-1 inline h-4 w-4" /> {featuredEvent.attendeeCount} Participants

@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
+import { useLocalizedEvent } from "@/components/LocalizedEventText";
 import type { Event } from "@/lib/types";
 
 export function EventCard({ event, compact = false }: { event: Event; compact?: boolean }) {
+  const localizedEvent = useLocalizedEvent(event);
+
   if (compact) {
     return (
-      <Link href={`/events/${event.id}`} className="grid grid-cols-[86px_1fr] gap-4 rounded-2xl p-2 hover:bg-white">
+      <Link href={`/events/${event.id}`} className="grid grid-cols-[86px_1fr] gap-4 rounded-2xl p-2 hover:bg-white" data-no-translate>
         <div className="h-[86px] overflow-hidden rounded-2xl bg-purple-100">
           {event.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -16,8 +21,8 @@ export function EventCard({ event, compact = false }: { event: Event; compact?: 
         </div>
         <div>
           <p className="text-sm text-slate-400">{formatDate(event.starts_at)}</p>
-          <h3 className="line-clamp-2 font-black leading-tight">{event.title}</h3>
-          <p className="mt-1 line-clamp-1 text-sm text-slate-400">{event.organizer_name}</p>
+          <h3 className="line-clamp-2 font-black leading-tight">{localizedEvent.title}</h3>
+          <p className="mt-1 line-clamp-1 text-sm text-slate-400">{localizedEvent.organizerName}</p>
         </div>
       </Link>
     );
@@ -27,15 +32,16 @@ export function EventCard({ event, compact = false }: { event: Event; compact?: 
     <Link
       href={`/events/${event.id}`}
       className="grid gap-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg md:grid-cols-[1fr_150px]"
+      data-no-translate
     >
       <div>
         <p className="text-slate-400">{formatDate(event.starts_at)}</p>
-        <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight">{event.title}</h3>
+        <h3 className="mt-2 text-2xl font-black leading-tight tracking-tight">{localizedEvent.title}</h3>
         <p className="mt-3 flex items-center gap-2 text-slate-400">
-          <Users size={16} /> {event.organizer_name || "Global AI Industry Alliance"}
+          <Users size={16} /> {localizedEvent.organizerName || "Global AI Industry Alliance"}
         </p>
         <p className="mt-2 flex items-center gap-2 text-slate-400">
-          <MapPin size={16} /> {event.location || "Online / TBA"}
+          <MapPin size={16} /> {localizedEvent.location || "Online / TBA"}
         </p>
         {event.ticket_price === 0 && (
           <span className="mt-4 inline-block rounded-lg bg-green-100 px-3 py-1 text-sm font-bold text-green-700">無料</span>
