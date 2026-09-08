@@ -83,7 +83,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       <Script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" strategy="afterInteractive" />
       <div id="google_translate_element" className="hidden" />
       {children}
-      <LanguageSwitcher />
     </LanguageContext.Provider>
   );
 }
@@ -94,16 +93,13 @@ export function useLanguage() {
   return value;
 }
 
-function LanguageSwitcher() {
+export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const activeLanguage = languages.find((item) => item.code === language) || languages[0];
 
   return (
-    <aside
-      className="fixed right-4 top-4 z-[100] w-32 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-900/15 backdrop-blur"
-      aria-label="Language"
-    >
+    <div className="relative z-[100] w-28 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur" aria-label="Language">
       {open && (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/15 backdrop-blur">
           <div className="max-h-52 overflow-y-auto pr-0.5">
@@ -145,6 +141,6 @@ function LanguageSwitcher() {
         </span>
         <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
-    </aside>
+    </div>
   );
 }

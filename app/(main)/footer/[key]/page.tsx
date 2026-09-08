@@ -1,6 +1,7 @@
-import { notFound, redirect } from "next/navigation";
-import { footerLinkItems, normalizeFooterUrl } from "@/lib/footer-links";
+import { notFound } from "next/navigation";
+import { footerLinkItems, type FooterLinkKey } from "@/lib/footer-links";
 import { getFooterLinks } from "@/lib/footer-link-settings";
+import { FooterFrameClient } from "./FooterFrameClient";
 
 export default async function FooterFramePage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
@@ -8,5 +9,5 @@ export default async function FooterFramePage({ params }: { params: Promise<{ ke
   if (!item) notFound();
   const links = await getFooterLinks();
 
-  redirect(normalizeFooterUrl(links[item.key] || item.defaultUrl));
+  return <FooterFrameClient linkKey={key as FooterLinkKey} url={links[item.key] || item.defaultUrl} />;
 }
