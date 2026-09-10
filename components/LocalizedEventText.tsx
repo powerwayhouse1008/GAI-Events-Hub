@@ -15,9 +15,9 @@ export function useLocalizedEvent(event: Event): LocalizedEvent {
   return useMemo(
     () => ({
       ...event,
-      title: pickLocalized(event.title_i18n ?? event.title, language),
-      description: pickLocalized(event.description_i18n ?? event.description, language) || null,
-      location: pickLocalized(event.location_i18n ?? event.location, language) || null,
+      title: pickLocalized(event.title_i18n, language, event.source_language) || event.title,
+      description: pickLocalized(event.description_i18n, language, event.source_language) || event.description || null,
+      location: pickLocalized(event.location_i18n, language, event.source_language) || event.location || null,
       organizerName: pickLocalized(
         event.creator?.display_name_i18n ??
           event.creator?.name_i18n ??
@@ -26,7 +26,8 @@ export function useLocalizedEvent(event: Event): LocalizedEvent {
           event.creator?.display_name ??
           event.creator_name ??
           event.organizer_name,
-        language
+        language,
+        event.source_language
       )
     }),
     [event, language]

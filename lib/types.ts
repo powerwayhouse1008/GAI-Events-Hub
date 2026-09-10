@@ -3,6 +3,7 @@ export type ApprovalStatus = "none" | "pending" | "approved" | "rejected";
 export type EventStatus = "pending" | "published" | "rejected" | "draft";
 export type RegistrationStatus = "pending" | "approved" | "rejected";
 export type LocalizedText = string | Partial<Record<"ja" | "en" | "zh" | "vi", string>> | null;
+export type EventLanguage = "ja" | "en" | "zh" | "vi";
 
 export type Profile = {
   id: string;
@@ -26,6 +27,7 @@ export type Event = {
   title_i18n?: LocalizedText;
   description: string | null;
   description_i18n?: LocalizedText;
+  source_language?: EventLanguage;
   organizer_id: string;
   organizer_name: string | null;
   organizer_name_i18n?: LocalizedText;

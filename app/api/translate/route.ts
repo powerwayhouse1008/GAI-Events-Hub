@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getLanguage, type LanguageCode } from "@/lib/i18n";
+import type { LanguageCode } from "@/lib/i18n";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -22,17 +22,25 @@ function textHash(source: string, target: LanguageCode, text: string) {
   return createHash("sha256").update(`${source}\0${target}\0${text}`).digest("hex");
 }
 
+function isLanguageCode(value: string): value is LanguageCode {
+  return ["ja", "en", "zh", "vi"].includes(value);
+}
+
 export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ translations: [], missing: [] }, { status: 400 });
   }
 
-  const target = getLanguage(parsed.data.target);
-  const source = parsed.data.source || "ja";
+  const target = parsed.data.target;
+  const source = parsed.data.source || "";
   const texts = parsed.data.texts.map((text) => text.trim()).filter(Boolean);
 
-  if (target === "ja" || !texts.length) {
+  if (!isLanguageCode(source) || !isLanguageCode(target)) {
+    return NextResponse.json({ translations: [], missing: [] }, { status: 400 });
+  }
+
+  if (source === target || !texts.length) {
     return NextResponse.json({ translations: texts, missing: [] });
   }
 
@@ -48,7 +56,7 @@ export async function POST(request: Request) {
           source_hash: textHash(source, target, sourceText),
           source_text: sourceText,
           translated_text: parsed.data.translations?.[index] || sourceText,
-          model: "chrome-translator-api"
+          model: "browser-transformers-js"
         })),
         { onConflict: "source_lang,target_lang,source_hash" }
       );

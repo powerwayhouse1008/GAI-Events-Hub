@@ -31,6 +31,10 @@ create table if not exists public.events (
   online_url text,
   cover_url text,
   theme_color text,
+  source_language text not null default 'ja',
+  title_i18n jsonb,
+  description_i18n jsonb,
+  location_i18n jsonb,
   starts_at timestamptz not null,
   ends_at timestamptz,
   capacity integer check (capacity is null or capacity >= 0),
@@ -125,8 +129,8 @@ create table if not exists public.site_footer_links (
 
 create table if not exists public.translation_cache (
   id uuid primary key default uuid_generate_v4(),
-  source_lang text not null,
-  target_lang text not null check (target_lang in ('en', 'zh', 'vi')),
+  source_lang text not null check (source_lang in ('ja', 'en', 'zh', 'vi')),
+  target_lang text not null check (target_lang in ('ja', 'en', 'zh', 'vi')),
   source_hash text not null,
   source_text text not null,
   translated_text text not null,
@@ -170,6 +174,10 @@ alter table public.events
   add column if not exists online_url text,
   add column if not exists cover_url text,
   add column if not exists theme_color text,
+  add column if not exists source_language text not null default 'ja',
+  add column if not exists title_i18n jsonb,
+  add column if not exists description_i18n jsonb,
+  add column if not exists location_i18n jsonb,
   add column if not exists capacity integer,
   add column if not exists ticket_price numeric not null default 0,
   add column if not exists approval_mode text not null default 'manual',
@@ -191,6 +199,13 @@ alter table public.site_footer_links
   add column if not exists url text not null default '',
   add column if not exists updated_at timestamptz not null default now();
 
+alter table public.events
+  drop constraint if exists events_source_language_check;
+
+alter table public.events
+  add constraint events_source_language_check
+    check (source_language in ('ja', 'en', 'zh', 'vi'));
+
 alter table public.translation_cache
   add column if not exists source_lang text not null default 'ja',
   add column if not exists target_lang text not null default 'en',
@@ -200,6 +215,16 @@ alter table public.translation_cache
   add column if not exists model text,
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
+
+alter table public.translation_cache
+  drop constraint if exists translation_cache_source_lang_check,
+  drop constraint if exists translation_cache_target_lang_check;
+
+alter table public.translation_cache
+  add constraint translation_cache_source_lang_check
+    check (source_lang in ('ja', 'en', 'zh', 'vi')),
+  add constraint translation_cache_target_lang_check
+    check (target_lang in ('ja', 'en', 'zh', 'vi'));
 
 -- Helpful indexes for lists/detail dashboards.
 create index if not exists events_status_starts_at_idx on public.events (status, starts_at);

@@ -4,9 +4,9 @@ export const eventCategories = ["AI", "Tech", "Startup", "Developer", "Seminar",
 export const eventRegions = ["Tokyo", "Osaka", "Kyoto", "Singapore", "Seoul", "Taipei", "Hong Kong", "Bangkok", "Online"];
 
 export const eventListColumns =
-  "id,title,description,category,region,location,organizer_name,cover_url,theme_color,starts_at,ends_at,featured";
-export const archiveEventColumns = "id,title,description,category,region,location,cover_url,starts_at,ends_at";
-export const calendarEventColumns = "id,title,category,region,location,cover_url,starts_at,ends_at";
+  "id,title,title_i18n,description,description_i18n,source_language,category,region,location,location_i18n,organizer_name,cover_url,theme_color,starts_at,ends_at,featured";
+export const archiveEventColumns = "id,title,title_i18n,description,description_i18n,source_language,category,region,location,location_i18n,cover_url,starts_at,ends_at";
+export const calendarEventColumns = "id,title,title_i18n,source_language,category,region,location,location_i18n,cover_url,starts_at,ends_at";
 
 export const eventThemeStyles: Record<string, { border: string; badge: string; glow: string; gradient: string; soft: string; ring: string }> = {
   purple: {

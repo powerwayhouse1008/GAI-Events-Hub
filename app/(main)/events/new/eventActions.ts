@@ -3,7 +3,7 @@
 import { requireOrganizer } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyEventParticipants } from "@/lib/event-notifications";
-import type { Profile } from "@/lib/types";
+import type { EventLanguage, LocalizedText, Profile } from "@/lib/types";
 
 type SaveEventInput = {
   eventId?: string;
@@ -16,12 +16,21 @@ type SaveEventInput = {
   onlineUrl: string;
   coverUrl: string | null;
   themeColor: string;
+  sourceLanguage: EventLanguage;
   startsAt: string;
   endsAt: string;
   capacity: number | null;
   ticketPrice: number;
   approvalMode: string;
   featured: boolean;
+};
+
+type SaveEventTranslationsInput = {
+  eventId: string;
+  sourceLanguage: EventLanguage;
+  title_i18n: LocalizedText;
+  description_i18n: LocalizedText;
+  location_i18n: LocalizedText;
 };
 
 type GenerateEventCoverInput = {
@@ -244,6 +253,7 @@ export async function saveEvent(input: SaveEventInput) {
     online_url: input.onlineUrl,
     cover_url: input.coverUrl,
     theme_color: input.themeColor,
+    source_language: input.sourceLanguage,
     starts_at: input.startsAt,
     ends_at: input.endsAt,
     capacity: input.capacity,
@@ -272,4 +282,39 @@ export async function saveEvent(input: SaveEventInput) {
   }
 
   return { id: data.id as string };
+}
+
+export async function saveEventTranslations(input: SaveEventTranslationsInput) {
+  const profile = await requireOrganizer();
+  const supabase = createAdminClient();
+
+  const { data: existingEvent, error: fetchError } = await supabase
+    .from("events")
+    .select("organizer_id")
+    .eq("id", input.eventId)
+    .single();
+
+  if (fetchError || !existingEvent) {
+    return { error: "Event not found." };
+  }
+
+  if (profile.role !== "admin" && existingEvent.organizer_id !== profile.id) {
+    return { error: "You do not have permission to update this event." };
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({
+      source_language: input.sourceLanguage,
+      title_i18n: input.title_i18n,
+      description_i18n: input.description_i18n,
+      location_i18n: input.location_i18n
+    })
+    .eq("id", input.eventId);
+
+  if (error) {
+    return { error: `Could not save event translations. ${error.message}` };
+  }
+
+  return { ok: true };
 }

@@ -3,10 +3,13 @@
 import { Bold, Check, Highlighter, ImagePlus, Italic, Palette, Underline, WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 import { eventCategories, eventRegions } from "@/lib/events";
+import { languages, type LanguageCode } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { prepareEventTranslations } from "@/lib/translation/client";
 import type { Event } from "@/lib/types";
-import { generateEventCover, saveEvent } from "./eventActions";
+import { generateEventCover, saveEvent, saveEventTranslations } from "./eventActions";
 
 type EventFormProps = {
   event?: Event;
@@ -57,6 +60,7 @@ function isSelectionInside(element: HTMLElement, range: Range) {
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
+  const { language } = useLanguage();
   const formRef = useRef<HTMLFormElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -66,6 +70,8 @@ export function EventForm({ event }: EventFormProps) {
   const [coverPreview, setCoverPreview] = useState<string>(event?.cover_url || "");
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(event?.cover_url || null);
   const [selectedTheme, setSelectedTheme] = useState(event?.theme_color || "purple");
+  const [sourceLanguage, setSourceLanguage] = useState<LanguageCode>(event?.source_language || language);
+  const [translationStatus, setTranslationStatus] = useState<string | null>(null);
   const isEditing = Boolean(event);
   const minStartDate = getTokyoDateInputValue();
 
@@ -136,6 +142,7 @@ export function EventForm({ event }: EventFormProps) {
 
   async function submit(formData: FormData) {
     setLoading(true);
+    setTranslationStatus(null);
 
     const {
       data: { user }
@@ -188,6 +195,7 @@ export function EventForm({ event }: EventFormProps) {
     }
 
     const htmlDescription = editorRef.current?.innerHTML || "";
+    const selectedSourceLanguage = String(formData.get("source_language") || sourceLanguage) as LanguageCode;
     const result = await saveEvent({
       eventId: event?.id,
       title: String(formData.get("title") || ""),
@@ -199,6 +207,7 @@ export function EventForm({ event }: EventFormProps) {
       onlineUrl: String(formData.get("online_url") || ""),
       coverUrl,
       themeColor: String(formData.get("theme_color") || selectedTheme || "purple"),
+      sourceLanguage: selectedSourceLanguage,
       startsAt,
       endsAt,
       capacity: Number(formData.get("capacity") || 0) || null,
@@ -213,7 +222,41 @@ export function EventForm({ event }: EventFormProps) {
       return;
     }
 
-    router.push(`/events/${result.id}`);
+    const eventId = result.id;
+    if (!eventId) {
+      alert("Event was saved, but no event ID was returned.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setTranslationStatus("鄙ｻ險ｳ繝｢繝・Ν繧呈ｺ門ｙ縺励※縺・∪縺・..");
+      const translations = await prepareEventTranslations(
+        {
+          title: String(formData.get("title") || ""),
+          description: htmlDescription,
+          location: String(formData.get("location") || ""),
+          sourceLanguage: selectedSourceLanguage
+        },
+        (progress) => setTranslationStatus(progress.message)
+      );
+
+      setTranslationStatus("鄙ｻ險ｳ繧剃ｿ晏ｭ倥＠縺ｦ縺・∪縺・..");
+      const translationResult = await saveEventTranslations({
+        eventId,
+        sourceLanguage: selectedSourceLanguage,
+        ...translations
+      });
+
+      if (translationResult.error) {
+        alert(translationResult.error);
+      }
+    } catch (error) {
+      console.error("Event translation failed", error);
+      alert("繧､繝吶Φ繝医・菫晏ｭ倥＆繧後∪縺励◆縺後∬・蜍慕ｿｻ險ｳ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲ょｾ後〒蜀咲ｿｻ險ｳ縺ｧ縺阪∪縺吶・");
+    }
+
+    router.push(`/events/${eventId}`);
     router.refresh();
   }
 
@@ -264,6 +307,17 @@ export function EventForm({ event }: EventFormProps) {
         <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
           イベントは承認待ちとして保存されます。公開するには管理者による承認が必要です。
         </div>
+
+        <label className="grid gap-2 text-sm font-black text-slate-700">
+          <span>Source language</span>
+          <select className="input" name="source_language" value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value as LanguageCode)}>
+            {languages.map((item) => (
+              <option key={item.code} value={item.code}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <textarea
           className="min-h-32 w-full resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
@@ -412,6 +466,8 @@ export function EventForm({ event }: EventFormProps) {
             })}
           </div>
         </fieldset>
+
+        {translationStatus && <p className="text-center text-sm font-bold text-purple-700">{translationStatus}</p>}
 
         <button disabled={loading || generatingCover} className="btn btn-primary w-full text-lg" type="submit">
           {loading ? <span className="loading-dots" aria-label="保存中" /> : isEditing ? "イベントを更新" : "イベント作成"}
