@@ -223,7 +223,7 @@ function MonthCell({
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         {cell.events.slice(0, 4).map((event) => (
-          <Link key={event.id} href={`/events/${event.id}`} title={event.title} aria-label={event.title} className="transition hover:-translate-y-0.5" data-no-translate>
+          <Link key={event.id} href={`/events/${event.id}`} title={event.title} aria-label={event.title} className="transition hover:-translate-y-0.5">
             <EventLogo event={event} />
           </Link>
         ))}
@@ -235,7 +235,7 @@ function MonthCell({
       </div>
 
       {cell.events[0] && (
-        <Link href={`/events/${cell.events[0].id}`} className="mt-2 line-clamp-2 block text-xs font-bold leading-5 text-slate-700 hover:text-emerald-700" data-no-translate>
+        <Link href={`/events/${cell.events[0].id}`} className="mt-2 line-clamp-2 block text-xs font-bold leading-5 text-slate-700 hover:text-emerald-700">
           {cell.events[0].title}
         </Link>
       )}
@@ -270,7 +270,6 @@ function WeekView({ days, labels, locale }: { days: DayCell[]; labels: (typeof c
                     <Link
                       href={`/events/${event.id}`}
                       className="flex h-full gap-3 rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-3 shadow-lg shadow-violet-950/[0.06] transition duration-200 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-xl hover:shadow-violet-950/10"
-                      data-no-translate
                     >
                       <EventLogo event={event} large />
                       <span className="min-w-0">
@@ -331,7 +330,6 @@ export function CalendarClient({ events }: { events: Event[] }) {
   return (
     <main
       key={language}
-      data-no-translate
       className="min-h-screen bg-[linear-gradient(135deg,#eefcf4,#f8fafc_45%,#f7f0ff)] px-4 py-8 text-slate-950 sm:px-6"
     >
       <section className="mx-auto max-w-[1180px] overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-2xl shadow-emerald-950/10 backdrop-blur">

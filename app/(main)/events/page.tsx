@@ -52,7 +52,7 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
   const theme = getEventTheme(event);
 
   return (
-    <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`} data-no-translate>
+    <article className={`rounded-3xl border ${theme.border} bg-white/[0.07] p-6 shadow-xl ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.09]`}>
       <div className="flex items-start gap-4">
         <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${theme.gradient} text-white shadow-lg`}>
           <Sparkles size={23} />
@@ -111,7 +111,7 @@ function EventGridCard({ event }: { event: EventWithCount }) {
   const theme = getEventTheme(event);
 
   return (
-    <Link href={`/events/${event.id}`} className={`group overflow-hidden rounded-2xl border ${theme.border} bg-white/[0.07] shadow-lg ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.1]`} data-no-translate>
+    <Link href={`/events/${event.id}`} className={`group overflow-hidden rounded-2xl border ${theme.border} bg-white/[0.07] shadow-lg ${theme.glow} backdrop-blur transition duration-200 hover:-translate-y-1 hover:bg-white/[0.1]`}>
       <div className="aspect-[16/10] overflow-hidden bg-slate-900">
         {event.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -251,10 +251,10 @@ export default async function EventsPage({
           </div>
           <div className="rounded-b-3xl border border-white/10 bg-white/[0.08] p-8 shadow-xl shadow-violet-950/20 backdrop-blur lg:rounded-r-3xl lg:rounded-bl-none">
             <p className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-black uppercase text-amber-200">Featured Poster</p>
-            <h2 className="mt-5 text-4xl font-black" data-no-translate>
+            <h2 className="mt-5 text-4xl font-black">
               <LocalizedEventText event={featuredEvent} field="title" />
             </h2>
-            <p className="mt-5 line-clamp-4 leading-8 text-slate-300" data-no-translate>
+            <p className="mt-5 line-clamp-4 leading-8 text-slate-300">
               <LocalizedEventText event={featuredEvent} field="description" fallback="AI community event" />
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">

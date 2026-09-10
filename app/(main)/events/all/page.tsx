@@ -17,7 +17,6 @@ function EventArchiveCard({ event }: { event: Event }) {
     <Link
       href={`/events/${event.id}`}
       className="group grid overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.07] shadow-xl backdrop-blur transition hover:-translate-y-1 hover:bg-white/[0.1] md:grid-cols-[280px_1fr]"
-      data-no-translate
     >
       <div className="h-56 overflow-hidden bg-slate-900 md:h-full">
         {event.cover_url ? (

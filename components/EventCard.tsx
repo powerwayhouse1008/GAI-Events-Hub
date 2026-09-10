@@ -10,7 +10,7 @@ export function EventCard({ event, compact = false }: { event: Event; compact?: 
 
   if (compact) {
     return (
-      <Link href={`/events/${event.id}`} className="grid grid-cols-[86px_1fr] gap-4 rounded-2xl p-2 hover:bg-white" data-no-translate>
+      <Link href={`/events/${event.id}`} className="grid grid-cols-[86px_1fr] gap-4 rounded-2xl p-2 hover:bg-white">
         <div className="h-[86px] overflow-hidden rounded-2xl bg-purple-100">
           {event.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -32,7 +32,6 @@ export function EventCard({ event, compact = false }: { event: Event; compact?: 
     <Link
       href={`/events/${event.id}`}
       className="grid gap-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg md:grid-cols-[1fr_150px]"
-      data-no-translate
     >
       <div>
         <p className="text-slate-400">{formatDate(event.starts_at)}</p>

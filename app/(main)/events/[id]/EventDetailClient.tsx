@@ -263,7 +263,7 @@ export function EventDetailClient({
 
 function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }; theme: ReturnType<typeof getEventTheme> }) {
   return (
-    <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl" data-no-translate>
+    <section className="relative overflow-hidden rounded-[8px] border border-white/15 bg-white/[0.05] shadow-2xl">
       <div className="relative h-[360px] sm:h-[520px] lg:h-[640px]">
         {event.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element

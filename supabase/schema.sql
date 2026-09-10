@@ -123,6 +123,19 @@ create table if not exists public.site_footer_links (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.translation_cache (
+  id uuid primary key default uuid_generate_v4(),
+  source_lang text not null,
+  target_lang text not null check (target_lang in ('en', 'zh', 'vi')),
+  source_hash text not null,
+  source_text text not null,
+  translated_text text not null,
+  model text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (source_lang, target_lang, source_hash)
+);
+
 -- Add columns/checks when this file is run over an older schema.
 alter table public.profiles
   add column if not exists email text,
@@ -178,6 +191,16 @@ alter table public.site_footer_links
   add column if not exists url text not null default '',
   add column if not exists updated_at timestamptz not null default now();
 
+alter table public.translation_cache
+  add column if not exists source_lang text not null default 'ja',
+  add column if not exists target_lang text not null default 'en',
+  add column if not exists source_hash text not null default '',
+  add column if not exists source_text text not null default '',
+  add column if not exists translated_text text not null default '',
+  add column if not exists model text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
 -- Helpful indexes for lists/detail dashboards.
 create index if not exists events_status_starts_at_idx on public.events (status, starts_at);
 create index if not exists events_featured_starts_at_idx on public.events (featured, starts_at);
@@ -191,6 +214,7 @@ create index if not exists event_notifications_event_created_at_idx on public.ev
 create index if not exists event_votes_event_value_idx on public.event_votes (event_id, value);
 create index if not exists event_comments_event_created_at_idx on public.event_comments (event_id, created_at desc);
 create index if not exists event_comment_restrictions_event_user_idx on public.event_comment_restrictions (event_id, user_id);
+create index if not exists translation_cache_lookup_idx on public.translation_cache (source_lang, target_lang, source_hash);
 
 -- -----------------------------------------------------------------------------
 -- Functions and triggers
@@ -358,6 +382,11 @@ create trigger event_comments_touch_updated_at
 before update on public.event_comments
 for each row execute procedure public.touch_updated_at();
 
+drop trigger if exists translation_cache_touch_updated_at on public.translation_cache;
+create trigger translation_cache_touch_updated_at
+before update on public.translation_cache
+for each row execute procedure public.touch_updated_at();
+
 -- Stop normal users from changing their own role/approval status via the profile form.
 create or replace function public.prevent_profile_privilege_escalation()
 returns trigger
@@ -407,6 +436,7 @@ alter table public.event_votes enable row level security;
 alter table public.event_comments enable row level security;
 alter table public.event_comment_restrictions enable row level security;
 alter table public.site_footer_links enable row level security;
+alter table public.translation_cache enable row level security;
 
 -- Profiles
 -- Members can read themselves. Admins can read everyone. Event organizers can read
@@ -789,6 +819,7 @@ grant select, insert, update, delete on public.event_votes to authenticated;
 grant select, insert, update, delete on public.event_comments to authenticated;
 grant select, insert, update, delete on public.event_comment_restrictions to authenticated;
 grant select, insert, update, delete on public.site_footer_links to authenticated;
+grant select, insert, update, delete on public.translation_cache to authenticated;
 grant execute on function public.is_admin(uuid) to anon, authenticated;
 grant execute on function public.is_approved_organizer(uuid) to anon, authenticated;
 grant execute on function public.is_event_organizer(uuid, uuid) to anon, authenticated;
