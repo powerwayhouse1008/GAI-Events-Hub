@@ -1,5 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { LocalizedText } from "@/components/LocalizedText";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function MePage() {
@@ -21,11 +22,11 @@ export default async function MePage() {
 
   return (
     <main className="mx-auto max-w-[1200px] px-6 py-10">
-      <h1 className="text-5xl font-black tracking-tight">My Page</h1>
+      <h1 className="text-5xl font-black tracking-tight"><LocalizedText text="My Page" /></h1>
       <ProfileForm profile={profile} />
 
       <section className="card mt-8 p-7">
-        <h2 className="text-3xl font-black">Notifications</h2>
+        <h2 className="text-3xl font-black"><LocalizedText text="Notifications" /></h2>
         <div className="mt-5 grid gap-3">
           {(notifications as any[]).map((notification) => (
             <a
@@ -46,23 +47,23 @@ export default async function MePage() {
               </p>
             </a>
           ))}
-          {!notifications?.length && <p className="text-slate-500">No notifications.</p>}
+          {!notifications?.length && <p className="text-slate-500"><LocalizedText text="No notifications." /></p>}
         </div>
       </section>
 
       <section className="card mt-8 overflow-x-auto p-7">
-        <h2 className="text-3xl font-black">My Event Registrations</h2>
+        <h2 className="text-3xl font-black"><LocalizedText text="My Event Registrations" /></h2>
         <table className="mt-6 w-full text-left">
-          <thead><tr className="border-b"><th className="p-3">Event</th><th className="p-3">Date</th><th className="p-3">Status</th></tr></thead>
+          <thead><tr className="border-b"><th className="p-3"><LocalizedText text="Event" /></th><th className="p-3"><LocalizedText text="Date" /></th><th className="p-3"><LocalizedText text="Status" /></th></tr></thead>
           <tbody>
             {(registrations as any[]).map((r) => (
               <tr key={r.id} className="border-b">
                 <td className="p-3">{r.events?.title}</td>
                 <td className="p-3">{r.events?.starts_at ? new Date(r.events.starts_at).toLocaleDateString("ja-JP") : ""}</td>
-                <td className="p-3"><span className={`status status-${r.status}`}>{r.status}</span></td>
+                <td className="p-3"><span className={`status status-${r.status}`}><LocalizedText text={r.status} /></span></td>
               </tr>
             ))}
-            {!registrations?.length && <tr><td colSpan={3} className="p-3 text-slate-500">No registrations.</td></tr>}
+            {!registrations?.length && <tr><td colSpan={3} className="p-3 text-slate-500"><LocalizedText text="No registrations." /></td></tr>}
           </tbody>
         </table>
       </section>

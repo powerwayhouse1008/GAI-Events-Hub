@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { LocalizedText } from "@/components/LocalizedText";
 import { RegisterForm } from "./RegisterForm";
 
 export default function RegisterPage() {
@@ -11,16 +12,16 @@ export default function RegisterPage() {
           Global AI Industry Alliance
         </Link>
         <div className="max-w-2xl">
-          <p className="text-sm font-black uppercase text-cyan-200">Create Account</p>
-          <h1 className="mt-5 text-6xl font-black leading-tight">Start joining and hosting better AI events.</h1>
+          <p className="text-sm font-black uppercase text-cyan-200"><LocalizedText text="Create Account" /></p>
+          <h1 className="mt-5 text-6xl font-black leading-tight"><LocalizedText text="Start joining and hosting better AI events." /></h1>
           <p className="mt-6 text-lg leading-8 text-slate-300">
             登録したすべてのアカウントでイベント参加とイベント作成を利用できます。
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-sm font-bold text-slate-300">
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Member</span>
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Organizer</span>
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Global</span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Member" /></span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Organizer" /></span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Global" /></span>
         </div>
       </section>
 

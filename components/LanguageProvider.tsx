@@ -54,7 +54,7 @@ export function LanguageSwitcher() {
   const activeLanguage = languages.find((item) => item.code === language) || languages[0];
 
   return (
-    <div className="relative z-[100] w-28 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur" aria-label="Language" data-no-translate>
+    <div className="relative z-[100] w-28 rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur" aria-label={translatePhrase("Language", language)} data-no-translate>
       {open && (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl shadow-slate-900/15 backdrop-blur">
           <div className="max-h-52 overflow-y-auto pr-0.5">
@@ -87,7 +87,7 @@ export function LanguageSwitcher() {
         type="button"
         className="flex min-h-10 w-full items-center justify-between gap-2 rounded-xl px-3 text-sm font-black text-slate-800 transition hover:bg-slate-100"
         aria-expanded={open}
-        aria-label="Language"
+        aria-label={translatePhrase("Language", language)}
         onClick={() => setOpen((value) => !value)}
       >
         <span className="flex items-center gap-2">

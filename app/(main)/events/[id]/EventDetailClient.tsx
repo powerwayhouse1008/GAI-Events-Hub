@@ -113,6 +113,7 @@ export function EventDetailClient({
   engagement: initialEngagement,
   registrationStatus
 }: EventDetailClientProps) {
+  const { t } = useLanguage();
   const localizedEvent = useLocalizedEvent(event);
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [documents, setDocuments] = useState(initialDocuments);
@@ -204,7 +205,7 @@ export function EventDetailClient({
                     </div>
                   </section>
 
-                  <ManagementSection title="通知・更新">
+                  <ManagementSection title={t("通知・更新")}>
                     <AnnouncementForm
                       eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "announcement"}
@@ -214,7 +215,7 @@ export function EventDetailClient({
                     <AnnouncementsList announcements={announcements} onDelete={refreshAnnouncements} isOrganizerView />
                   </ManagementSection>
 
-                  <ManagementSection title="資料・画像">
+                  <ManagementSection title={t("資料・画像")}>
                     <DocumentUpload
                       eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "document"}
@@ -224,11 +225,11 @@ export function EventDetailClient({
                     <DocumentsList documents={documents} onDelete={refreshDocuments} isOrganizerView />
                   </ManagementSection>
 
-                  <ManagementSection title="参加申込の管理">
+                  <ManagementSection title={t("参加申込の管理")}>
                     <RegistrationReviewPanel participants={participants} approvalMode={event.approval_mode} onUpdated={refreshParticipants} />
                   </ManagementSection>
 
-                  <ManagementSection title="参加者リスト">
+                  <ManagementSection title={t("参加者リスト")}>
                     <button onClick={refreshParticipants} className="btn border border-white/15 bg-white/10 text-white hover:bg-white/15" type="button">
                       参加者を更新
                     </button>
@@ -440,7 +441,7 @@ function EventEngagementPanel({
   onUpdated: () => Promise<void>;
   theme: ReturnType<typeof getEventTheme>;
 }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -449,7 +450,7 @@ function EventEngagementPanel({
     setBusy(`vote-${value}`);
     setNotice(null);
     const result = await setEventVote(eventId, value);
-    if (!result.ok) setNotice(result.message || "操作に失敗しました。");
+    if (!result.ok) setNotice(result.message ? t(result.message) : t("更新できませんでした。"));
     await onUpdated();
     setBusy(null);
   }
@@ -461,7 +462,7 @@ function EventEngagementPanel({
     const originalComment = comment;
     const result = await createEventComment(eventId, originalComment, sourceLanguage);
     if (result.ok) setComment("");
-    else setNotice(result.message || "コメントできませんでした。");
+    else setNotice(result.message ? t(result.message) : t("コメントできませんでした。"));
     await onUpdated();
     if (result.ok && result.id) {
       try {
@@ -491,7 +492,7 @@ function EventEngagementPanel({
     setBusy(action);
     setNotice(null);
     const result = await task();
-    if (!result.ok) setNotice(result.message || "操作に失敗しました。");
+    if (!result.ok) setNotice(result.message ? t(result.message) : t("更新できませんでした。"));
     await onUpdated();
     setBusy(null);
   }
@@ -499,7 +500,7 @@ function EventEngagementPanel({
   return (
     <section className="mt-10 rounded-[8px] border border-white/15 bg-white/[0.06] p-5 shadow-xl backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-3xl font-black">リアクション・コメント</h2>
+        <h2 className="text-3xl font-black">{t("リアクション・コメント")}</h2>
         <div className="flex gap-2">
           <button
             className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
@@ -536,7 +537,7 @@ function EventEngagementPanel({
               setComment(event.target.value);
               autoGrowTextarea(event.currentTarget);
             }}
-            placeholder="コメントを書く"
+            placeholder={t("コメントを書く")}
             value={comment}
           />
           <button
@@ -545,7 +546,7 @@ function EventEngagementPanel({
             onClick={submitComment}
             type="button"
           >
-            {busy === "comment" ? "送信中..." : "コメント投稿"}
+            {busy === "comment" ? t("送信中...") : t("コメント投稿")}
           </button>
         </div>
       )}
@@ -614,7 +615,7 @@ function EventEngagementPanel({
                 )}
               </div>
               <p className={`mt-3 whitespace-pre-wrap leading-7 ${item.hidden ? "text-slate-500 line-through" : "text-slate-200"}`}>
-                {item.hidden ? "このコメントは非表示です。" : localizedContent}
+                {item.hidden ? t("このコメントは非表示です。") : localizedContent}
               </p>
             </article>
           );
@@ -648,6 +649,7 @@ function RegistrationAction({
   setShowManualMessage: (value: boolean) => void;
   theme: ReturnType<typeof getEventTheme>;
 }) {
+  const { t } = useLanguage();
   const [registrationState, setRegistrationState] = useState<RegisterEventResult | null>(null);
   const [localRegistrationStatus, setLocalRegistrationStatus] = useState(registrationStatus);
   const [isSubmitting, setIsSubmitting] = useState(false);

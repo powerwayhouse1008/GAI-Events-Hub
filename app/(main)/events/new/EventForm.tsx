@@ -60,7 +60,7 @@ function isSelectionInside(element: HTMLElement, range: Range) {
 export function EventForm({ event }: EventFormProps) {
   const supabase = createClient();
   const router = useRouter();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const formRef = useRef<HTMLFormElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -126,7 +126,7 @@ export function EventForm({ event }: EventFormProps) {
     });
 
     if (result.error) {
-      alert(result.error);
+      alert(t(result.error));
       setGeneratingCover(false);
       return;
     }
@@ -165,13 +165,13 @@ export function EventForm({ event }: EventFormProps) {
     const startChanged = originalStartMinute !== null && floorToMinute(startsAtDate).getTime() !== originalStartMinute;
 
     if (Number.isNaN(startsAtDate.getTime()) || ((!event || startChanged) && startsAtDate < floorToMinute(new Date()))) {
-      alert("開始日時は現在時刻以降を選択してください。過去のイベントは作成できません。");
+      alert(t("開始日時は現在時刻以降を選択してください。過去のイベントは作成できません。"));
       setLoading(false);
       return;
     }
 
     if (Number.isNaN(endsAtDate.getTime()) || endsAtDate < startsAtDate) {
-      alert("終了日時は開始日時以降を選択してください。");
+      alert(t("終了日時は開始日時以降を選択してください。"));
       setLoading(false);
       return;
     }
@@ -185,7 +185,7 @@ export function EventForm({ event }: EventFormProps) {
       const { error: uploadError } = await supabase.storage.from("event-covers").upload(path, file);
 
       if (uploadError) {
-        alert(`画像をアップロードできませんでした。${uploadError.message}`);
+        alert(`${t("画像をアップロードできませんでした。")} ${uploadError.message}`);
         setLoading(false);
         return;
       }
@@ -217,14 +217,14 @@ export function EventForm({ event }: EventFormProps) {
     });
 
     if (result.error) {
-      alert(result.error);
+      alert(t(result.error));
       setLoading(false);
       return;
     }
 
     const eventId = result.id;
     if (!eventId) {
-      alert("Event was saved, but no event ID was returned.");
+      alert(t("Event was saved, but no event ID was returned."));
       setLoading(false);
       return;
     }
@@ -249,7 +249,7 @@ export function EventForm({ event }: EventFormProps) {
       });
 
       if (translationResult.error) {
-        alert(translationResult.error);
+        alert(t(translationResult.error));
       }
     } catch (error) {
       console.error("Event translation failed", error);
@@ -289,15 +289,15 @@ export function EventForm({ event }: EventFormProps) {
               }
             }}
           />
-          <p className="mt-4 text-center font-bold text-purple-700">イベント画像をアップロード</p>
+          <p className="mt-4 text-center font-bold text-purple-700">{t("イベント画像をアップロード")}</p>
         </label>
         <button className="btn mt-4 w-full border border-purple-200 bg-white text-purple-700 hover:bg-purple-50" disabled={loading || generatingCover} type="button" onClick={createAiCover}>
           {generatingCover ? (
-            <span className="loading-dots" aria-label="画像を生成中" />
+            <span className="loading-dots" aria-label={t("画像を生成中")} />
           ) : (
             <>
               <WandSparkles size={20} />
-              テーマに合わせてAI画像を生成
+              {t("テーマに合わせてAI画像を生成")}
             </>
           )}
         </button>
@@ -309,7 +309,7 @@ export function EventForm({ event }: EventFormProps) {
         </div>
 
         <label className="grid gap-2 text-sm font-black text-slate-700">
-          <span>Source language</span>
+          <span>{t("Source language")}</span>
           <select className="input" name="source_language" value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value as LanguageCode)}>
             {languages.map((item) => (
               <option key={item.code} value={item.code}>
@@ -322,7 +322,7 @@ export function EventForm({ event }: EventFormProps) {
         <textarea
           className="min-h-32 w-full resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-5xl font-black tracking-tight text-purple-700 outline-none placeholder:text-purple-300 md:text-6xl"
           name="title"
-          placeholder="イベント名"
+          placeholder={t("イベント名")}
           defaultValue={event?.title || ""}
           onInput={(event) => autoGrowTextarea(event.currentTarget)}
           ref={(element) => {
@@ -333,8 +333,8 @@ export function EventForm({ event }: EventFormProps) {
 
         <div className="grid gap-4 rounded-[20px] bg-white/70 p-4 md:grid-cols-[110px_1fr_160px]">
           <div className="grid gap-3 font-bold text-purple-600">
-            <span>開始</span>
-            <span>終了</span>
+            <span>{t("開始")}</span>
+            <span>{t("終了")}</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <input className="input" name="start_date" type="date" min={event ? undefined : minStartDate} defaultValue={datePart(event?.starts_at)} required />
@@ -352,20 +352,20 @@ export function EventForm({ event }: EventFormProps) {
         <textarea
           className="input min-h-24 resize-none overflow-hidden whitespace-pre-wrap"
           name="location"
-          placeholder="会場または住所"
+          placeholder={t("会場または住所")}
           defaultValue={event?.location || ""}
           onInput={(event) => autoGrowTextarea(event.currentTarget)}
           ref={(element) => {
             if (element) autoGrowTextarea(element);
           }}
         />
-        <input className="input" name="online_url" placeholder="オンラインURL" defaultValue={event?.online_url || ""} />
+        <input className="input" name="online_url" placeholder={t("オンラインURL")} defaultValue={event?.online_url || ""} />
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 p-3">
             <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontName", event.target.value)} onMouseDown={saveEditorSelection} defaultValue="">
               <option value="" disabled>
-                フォント
+                {t("フォント")}
               </option>
               <option value="Arial">Arial</option>
               <option value="Georgia">Georgia</option>
@@ -375,29 +375,29 @@ export function EventForm({ event }: EventFormProps) {
             </select>
             <select className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onChange={(event) => runEditorCommand("fontSize", event.target.value)} onMouseDown={saveEditorSelection} defaultValue="">
               <option value="" disabled>
-                サイズ
+                {t("サイズ")}
               </option>
-              <option value="2">小</option>
-              <option value="3">標準</option>
-              <option value="5">大</option>
-              <option value="7">特大</option>
+              <option value="2">{t("小")}</option>
+              <option value="3">{t("標準")}</option>
+              <option value="5">{t("大")}</option>
+              <option value="7">{t("特大")}</option>
             </select>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("bold")} type="button" aria-label="太字">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("bold")} type="button" aria-label={t("太字")}>
               <Bold size={17} />
             </button>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("italic")} type="button" aria-label="斜体">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("italic")} type="button" aria-label={t("斜体")}>
               <Italic size={17} />
             </button>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("underline")} type="button" aria-label="下線">
+            <button className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100" onMouseDown={(event) => event.preventDefault()} onClick={() => runEditorCommand("underline")} type="button" aria-label={t("下線")}>
               <Underline size={17} />
             </button>
             <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onMouseDown={saveEditorSelection}>
               <Palette size={17} />
-              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("foreColor", event.currentTarget.value)} aria-label="文字色" />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("foreColor", event.currentTarget.value)} aria-label={t("文字色")} />
             </label>
             <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" onMouseDown={saveEditorSelection}>
               <Highlighter size={17} />
-              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("hiliteColor", event.currentTarget.value)} aria-label="背景色" />
+              <input className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0" type="color" onInput={(event) => runEditorCommand("hiliteColor", event.currentTarget.value)} aria-label={t("背景色")} />
             </label>
           </div>
           <div
@@ -412,7 +412,7 @@ export function EventForm({ event }: EventFormProps) {
             onKeyUp={saveEditorSelection}
             onMouseUp={saveEditorSelection}
             role="textbox"
-            aria-label="イベント説明"
+            aria-label={t("イベント説明")}
             spellCheck
             suppressContentEditableWarning
             tabIndex={0}
@@ -420,7 +420,7 @@ export function EventForm({ event }: EventFormProps) {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <input className="input" name="organizer_name" placeholder="主催者名" defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
+          <input className="input" name="organizer_name" placeholder={t("主催者名")} defaultValue={event?.organizer_name || "Global AI Industry Alliance"} />
           <select className="input" name="category" defaultValue={event?.category || "AI"}>
             {eventCategories.map((category) => (
               <option key={category} value={category}>
@@ -435,16 +435,16 @@ export function EventForm({ event }: EventFormProps) {
               </option>
             ))}
           </select>
-          <input className="input" name="ticket_price" type="number" min="0" placeholder="チケット価格" defaultValue={event?.ticket_price || 0} />
+          <input className="input" name="ticket_price" type="number" min="0" placeholder={t("チケット価格")} defaultValue={event?.ticket_price || 0} />
           <select className="input" name="approval_mode" defaultValue={event?.approval_mode || "manual"}>
-            <option value="manual">参加者を手動承認</option>
-            <option value="auto">参加者を自動承認</option>
+            <option value="manual">{t("参加者を手動承認")}</option>
+            <option value="auto">{t("参加者を自動承認")}</option>
           </select>
-          <input className="input" name="capacity" type="number" min="0" placeholder="定員" defaultValue={event?.capacity || ""} />
+          <input className="input" name="capacity" type="number" min="0" placeholder={t("定員")} defaultValue={event?.capacity || ""} />
         </div>
 
         <fieldset className="grid gap-3">
-          <legend className="text-sm font-black text-slate-700">テーマカラー</legend>
+          <legend className="text-sm font-black text-slate-700">{t("テーマカラー")}</legend>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {themeColors.map((color) => {
               const checked = selectedTheme === color.value;
@@ -470,7 +470,7 @@ export function EventForm({ event }: EventFormProps) {
         {translationStatus && <p className="text-center text-sm font-bold text-purple-700">{translationStatus}</p>}
 
         <button disabled={loading || generatingCover} className="btn btn-primary w-full text-lg" type="submit">
-          {loading ? <span className="loading-dots" aria-label="保存中" /> : isEditing ? "イベントを更新" : "イベント作成"}
+          {loading ? <span className="loading-dots" aria-label={t("保存中...")} /> : isEditing ? t("イベントを更新") : t("イベント作成")}
         </button>
       </section>
     </form>

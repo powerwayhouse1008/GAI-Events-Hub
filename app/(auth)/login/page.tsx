@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { LocalizedText } from "@/components/LocalizedText";
 import { LoginForm } from "./LoginForm";
 
 export const dynamic = "force-dynamic";
@@ -32,16 +33,16 @@ export default async function LoginPage({
           Global AI Industry Alliance
         </Link>
         <div className="max-w-2xl">
-          <p className="text-sm font-black uppercase text-cyan-200">AI Event Hub</p>
-          <h1 className="mt-5 text-6xl font-black leading-tight">Connect, learn and join AI events.</h1>
+          <p className="text-sm font-black uppercase text-cyan-200"><LocalizedText text="AI Event Hub" /></p>
+          <h1 className="mt-5 text-6xl font-black leading-tight"><LocalizedText text="Connect, learn and join AI events." /></h1>
           <p className="mt-6 text-lg leading-8 text-slate-300">
             AI業界イベント、コミュニティ、カレンダー、主催者管理をひとつのプラットフォームで。
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-sm font-bold text-slate-300">
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Events</span>
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Calendar</span>
-          <span className="rounded-xl border border-white/10 bg-white/5 p-4">Community</span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Events" /></span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Calendar" /></span>
+          <span className="rounded-xl border border-white/10 bg-white/5 p-4"><LocalizedText text="Community" /></span>
         </div>
       </section>
 
