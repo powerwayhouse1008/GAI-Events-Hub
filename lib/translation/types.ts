@@ -18,3 +18,12 @@ export type EventTranslations = {
   description_i18n: Record<LanguageCode, string>;
   location_i18n: Record<LanguageCode, string>;
 };
+
+export type CommentTranslationInput = {
+  content: string;
+  sourceLanguage: LanguageCode;
+};
+
+export type CommentTranslations = {
+  content_i18n: Record<LanguageCode, string>;
+};

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Calendar, Plus, Search, Settings2, ShieldCheck, Ticket, UserRound } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { LanguageSwitcher } from "@/components/LanguageProvider";
+import { LocalizedText } from "@/components/LocalizedText";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Nav() {
@@ -18,17 +19,17 @@ export async function Nav() {
 
         <nav className="hidden items-center gap-1 text-sm font-bold text-slate-700 md:flex">
           <Link href="/events" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
-            <Ticket size={17} /> Events
+            <Ticket size={17} /> <LocalizedText text="Events" />
           </Link>
           <Link href="/calendar" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
-            <Calendar size={17} /> Calendar
+            <Calendar size={17} /> <LocalizedText text="Calendar" />
           </Link>
           <Link href="/search" className="flex min-h-10 items-center gap-2 rounded-full px-3 py-2 hover:bg-slate-100 hover:text-slate-950">
-            <Search size={17} /> Search
+            <Search size={17} /> <LocalizedText text="Search" />
           </Link>
           {canCreateEvent && (
             <Link href="/events/new" className="flex min-h-10 items-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-purple-700 shadow-sm hover:bg-fuchsia-200">
-              <Plus size={17} /> Create Event
+              <Plus size={17} /> <LocalizedText text="Create Event" />
             </Link>
           )}
           {profile?.role === "admin" && (
@@ -73,7 +74,7 @@ export async function Nav() {
           ) : (
             <>
               <Link href="/login" className="btn btn-primary">
-                Login
+                <LocalizedText text="Login" />
               </Link>
               <LanguageSwitcher />
             </>

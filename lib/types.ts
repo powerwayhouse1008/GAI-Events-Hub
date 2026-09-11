@@ -107,6 +107,8 @@ export type EventComment = {
   event_id: string;
   user_id: string;
   content: string;
+  source_language?: EventLanguage;
+  content_i18n?: LocalizedText;
   hidden: boolean;
   hidden_by: string | null;
   hidden_at: string | null;

@@ -26,10 +26,12 @@ import { AnnouncementForm } from "@/components/AnnouncementForm";
 import { AnnouncementsList } from "@/components/AnnouncementsList";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { DocumentsList } from "@/components/DocumentsList";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useLocalizedEvent } from "@/components/LocalizedEventText";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { RegistrationReviewPanel } from "@/components/RegistrationReviewPanel";
 import { formatTokyoDate, formatTokyoDateTime, formatTokyoTimeRange, getEventTheme } from "@/lib/events";
+import { pickLocalized } from "@/lib/i18n";
 import {
   createEventComment,
   deleteEventComment,
@@ -39,6 +41,7 @@ import {
   getEventParticipants,
   hideEventComment,
   restrictEventCommenter,
+  saveEventCommentTranslations,
   setEventVote,
   unrestrictEventCommenter
 } from "./eventManagerActions";
@@ -437,6 +440,7 @@ function EventEngagementPanel({
   onUpdated: () => Promise<void>;
   theme: ReturnType<typeof getEventTheme>;
 }) {
+  const { language } = useLanguage();
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -453,10 +457,33 @@ function EventEngagementPanel({
   async function submitComment() {
     setBusy("comment");
     setNotice(null);
-    const result = await createEventComment(eventId, comment);
+    const sourceLanguage = language;
+    const originalComment = comment;
+    const result = await createEventComment(eventId, originalComment, sourceLanguage);
     if (result.ok) setComment("");
     else setNotice(result.message || "コメントできませんでした。");
     await onUpdated();
+    if (result.ok && result.id) {
+      try {
+        const { prepareCommentTranslations } = await import("@/lib/translation/client");
+        const translations = await prepareCommentTranslations({
+          content: originalComment.trim(),
+          sourceLanguage
+        });
+
+        const translationResult = await saveEventCommentTranslations({
+          commentId: result.id,
+          eventId,
+          sourceLanguage,
+          ...translations
+        });
+
+        if (translationResult.ok) await onUpdated();
+      } catch (error) {
+        console.error("Comment translation failed", error);
+      }
+    }
+
     setBusy(null);
   }
 
@@ -539,6 +566,7 @@ function EventEngagementPanel({
         {engagement.comments.map((item) => {
           const restricted = engagement.restrictedUserIds.includes(item.user_id);
           const name = item.profiles?.display_name || item.profiles?.email || "User";
+          const localizedContent = pickLocalized(item.content_i18n, language, item.source_language) || item.content;
           return (
             <article key={item.id} className="rounded-[8px] border border-white/10 bg-black/20 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -586,7 +614,7 @@ function EventEngagementPanel({
                 )}
               </div>
               <p className={`mt-3 whitespace-pre-wrap leading-7 ${item.hidden ? "text-slate-500 line-through" : "text-slate-200"}`}>
-                {item.hidden ? "このコメントは非表示です。" : item.content}
+                {item.hidden ? "このコメントは非表示です。" : localizedContent}
               </p>
             </article>
           );

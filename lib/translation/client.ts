@@ -1,6 +1,12 @@
 import type { LanguageCode } from "@/lib/i18n";
 import { translateHtmlPreservingMarkup } from "@/lib/translation/html";
-import type { EventTranslationInput, EventTranslations, TranslationProgress } from "@/lib/translation/types";
+import type {
+  CommentTranslationInput,
+  CommentTranslations,
+  EventTranslationInput,
+  EventTranslations,
+  TranslationProgress
+} from "@/lib/translation/types";
 
 const targetLanguages: LanguageCode[] = ["ja", "en", "zh", "vi"];
 
@@ -87,4 +93,21 @@ export async function prepareEventTranslations(
   }
 
   return { title_i18n, description_i18n, location_i18n };
+}
+
+export async function prepareCommentTranslations(
+  input: CommentTranslationInput,
+  onProgress?: (progress: TranslationProgress) => void
+): Promise<CommentTranslations> {
+  const content_i18n = Object.fromEntries(
+    targetLanguages.map((language) => [language, input.sourceLanguage === language ? input.content : ""])
+  ) as Record<LanguageCode, string>;
+
+  for (const target of targetLanguages) {
+    if (target === input.sourceLanguage) continue;
+    onProgress?.({ stage: "translating", message: "Translating comment..." });
+    content_i18n[target] = await translatePlainText(input.content, input.sourceLanguage, target, onProgress);
+  }
+
+  return { content_i18n };
 }

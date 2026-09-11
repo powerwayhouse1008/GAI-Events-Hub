@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, requireUser } from "@/lib/auth";
 import { sendCommentNotificationEmail } from "@/lib/event-email-notifications";
 import { notifyEventParticipants } from "@/lib/event-notifications";
-import type { Announcement, EventComment, EventDocument } from "@/lib/types";
+import type { Announcement, EventComment, EventDocument, EventLanguage, LocalizedText } from "@/lib/types";
 
 async function verifyOrganizerAccess(eventId: string, userId: string) {
   const profile = await getProfile();
@@ -221,7 +221,7 @@ export async function getEventEngagement(eventId: string) {
       supabase.from("event_votes").select("user_id, value").eq("event_id", eventId),
       supabase
         .from("event_comments")
-        .select("id, event_id, user_id, content, hidden, hidden_by, hidden_at, created_at, updated_at")
+        .select("id, event_id, user_id, content, source_language, content_i18n, hidden, hidden_by, hidden_at, created_at, updated_at")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false }),
       supabase.from("event_comment_restrictions").select("user_id").eq("event_id", eventId)
@@ -288,7 +288,7 @@ export async function setEventVote(eventId: string, value: 1 | -1) {
   return error ? { ok: false, message: error.message } : { ok: true };
 }
 
-export async function createEventComment(eventId: string, content: string) {
+export async function createEventComment(eventId: string, content: string, sourceLanguage: EventLanguage = "ja") {
   const user = await requireUser();
   const supabase = createAdminClient();
   const text = content.trim();
@@ -306,17 +306,61 @@ export async function createEventComment(eventId: string, content: string) {
 
   if (restriction) return { ok: false, message: "このイベントではコメントが制限されています。" };
 
-  const { error } = await supabase.from("event_comments").insert({
-    event_id: eventId,
-    user_id: user.id,
-    content: text
-  });
+  const { data, error } = await supabase
+    .from("event_comments")
+    .insert({
+      event_id: eventId,
+      user_id: user.id,
+      content: text,
+      source_language: sourceLanguage,
+      content_i18n: { [sourceLanguage]: text }
+    })
+    .select("id")
+    .single();
 
   if (error) return { ok: false, message: error.message };
 
   await sendCommentNotificationEmail(eventId, user.id, text);
 
-  return { ok: true };
+  return { ok: true, id: data.id as string };
+}
+
+export async function saveEventCommentTranslations({
+  commentId,
+  eventId,
+  sourceLanguage,
+  content_i18n
+}: {
+  commentId: string;
+  eventId: string;
+  sourceLanguage: EventLanguage;
+  content_i18n: LocalizedText;
+}) {
+  const user = await requireUser();
+  const supabase = createAdminClient();
+
+  const { data: comment } = await supabase
+    .from("event_comments")
+    .select("user_id")
+    .eq("id", commentId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  const canManage = await verifyOrganizerAccess(eventId, user.id);
+  if (!comment || (!canManage && comment.user_id !== user.id)) {
+    return { ok: false, message: "You do not have permission to update this comment." };
+  }
+
+  const { error } = await supabase
+    .from("event_comments")
+    .update({
+      source_language: sourceLanguage,
+      content_i18n
+    })
+    .eq("id", commentId)
+    .eq("event_id", eventId);
+
+  return error ? { ok: false, message: error.message } : { ok: true };
 }
 
 export async function hideEventComment(commentId: string, eventId: string) {

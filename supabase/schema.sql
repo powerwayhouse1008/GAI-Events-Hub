@@ -103,6 +103,8 @@ create table if not exists public.event_comments (
   event_id uuid not null references public.events(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   content text not null,
+  source_language text not null default 'ja',
+  content_i18n jsonb,
   hidden boolean not null default false,
   hidden_by uuid references public.profiles(id) on delete set null,
   hidden_at timestamptz,
@@ -189,6 +191,8 @@ alter table public.announcements
   add column if not exists updated_at timestamptz not null default now();
 
 alter table public.event_comments
+  add column if not exists source_language text not null default 'ja',
+  add column if not exists content_i18n jsonb,
   add column if not exists hidden boolean not null default false,
   add column if not exists hidden_by uuid references public.profiles(id) on delete set null,
   add column if not exists hidden_at timestamptz,
@@ -204,6 +208,13 @@ alter table public.events
 
 alter table public.events
   add constraint events_source_language_check
+    check (source_language in ('ja', 'en', 'zh', 'vi'));
+
+alter table public.event_comments
+  drop constraint if exists event_comments_source_language_check;
+
+alter table public.event_comments
+  add constraint event_comments_source_language_check
     check (source_language in ('ja', 'en', 'zh', 'vi'));
 
 alter table public.translation_cache
