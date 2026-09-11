@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LocalizedText } from "@/components/LocalizedText";
 import { footerLinkItems } from "@/lib/footer-links";
 
 export async function SiteFooterLinks() {
@@ -7,7 +8,7 @@ export async function SiteFooterLinks() {
       <nav className="mx-auto flex max-w-[1500px] flex-wrap gap-x-6 gap-y-4 text-sm font-bold text-slate-200 md:text-base" aria-label="Footer">
         {footerLinkItems.map((link) => (
           <Link key={link.key} href={`/footer/${link.key}`} className="rounded-md hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">
-            {link.label}
+            <LocalizedText text={link.label} />
           </Link>
         ))}
       </nav>

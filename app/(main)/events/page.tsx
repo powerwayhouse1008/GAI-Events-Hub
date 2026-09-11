@@ -3,6 +3,7 @@ import { CalendarDays, ChevronRight, MapPin, Plus, Search, Sparkles, Users } fro
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { LocalizedEventText } from "@/components/LocalizedEventText";
+import { LocalizedText } from "@/components/LocalizedText";
 import { eventCategories, eventListColumns, eventRegions, formatTokyoDate, formatTokyoTimeRange, getEventTheme } from "@/lib/events";
 import type { Event } from "@/lib/types";
 
@@ -70,11 +71,11 @@ function TimelineEventBody({ event }: { event: EventWithCount }) {
               <MapPin size={16} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
             </p>
             <p className="flex items-center gap-2">
-              <Users size={16} /> {event.attendeeCount} Participants
+              <Users size={16} /> {event.attendeeCount} <LocalizedText text="参加者" />
             </p>
           </div>
           <Link href={`/events/${event.id}`} className={`mt-5 inline-flex items-center gap-2 font-bold ${theme.badge}`}>
-            詳細を見る <ChevronRight size={18} />
+            <LocalizedText text="詳細を見る" /> <ChevronRight size={18} />
           </Link>
         </div>
       </div>
@@ -133,11 +134,11 @@ function EventGridCard({ event }: { event: EventWithCount }) {
             <MapPin size={15} /> <LocalizedEventText event={event} field="location" fallback={event.region || "Online"} />
           </p>
           <p className="flex items-center gap-2">
-            <Users size={15} /> {event.attendeeCount} Participants
+            <Users size={15} /> {event.attendeeCount} <LocalizedText text="参加者" />
           </p>
         </div>
         <p className={`mt-5 inline-flex items-center gap-2 font-bold ${theme.badge}`}>
-          詳細を見る <ChevronRight size={18} />
+          <LocalizedText text="詳細を見る" /> <ChevronRight size={18} />
         </p>
       </div>
     </Link>
@@ -180,7 +181,7 @@ export default async function EventsPage({
               Discover Amazing <span className="bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">AI Events</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              世界中のAIコミュニティとつながり、学び、イベントに参加できます。主催者はイベントを作成し、画像や資料も公開できます。
+              <LocalizedText text="世界中のAIコミュニティとつながり、学び、イベントに参加できます。主催者はイベントを作成し、画像や資料も公開できます。" />
             </p>
 
             <form className="mt-8 grid max-w-[620px] gap-2 rounded-3xl border border-white/15 bg-white/10 p-2 shadow-2xl shadow-black/20 backdrop-blur md:grid-cols-[1fr_140px_140px_auto]">
@@ -228,7 +229,7 @@ export default async function EventsPage({
         <div className="text-center">
           <p className="text-xs font-black uppercase tracking-[0.48em] text-cyan-300">Upcoming Events</p>
           <h2 className="mt-3 text-4xl font-black">Event Timeline</h2>
-          <p className="mt-3 text-slate-400">日付ごとに注目イベントをタイムライン表示します。</p>
+          <p className="mt-3 text-slate-400"><LocalizedText text="日付ごとに注目イベントをタイムライン表示します。" /></p>
         </div>
 
         <div className="mt-8 grid gap-8">
@@ -265,7 +266,7 @@ export default async function EventsPage({
                 <MapPin className="mr-1 inline h-4 w-4" /> <LocalizedEventText event={featuredEvent} field="location" fallback={featuredEvent.region || "Online"} />
               </span>
               <span className="rounded-xl bg-white/10 px-3 py-2">
-                <Users className="mr-1 inline h-4 w-4" /> {featuredEvent.attendeeCount} Participants
+                <Users className="mr-1 inline h-4 w-4" /> {featuredEvent.attendeeCount} <LocalizedText text="参加者" />
               </span>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
