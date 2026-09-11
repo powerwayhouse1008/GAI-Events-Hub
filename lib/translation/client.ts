@@ -9,6 +9,7 @@ import type {
 } from "@/lib/translation/types";
 
 const targetLanguages: LanguageCode[] = ["ja", "en", "zh", "vi"];
+const maxChunkLength = 420;
 
 let worker: Worker | null = null;
 let nextRequestId = 1;
@@ -35,6 +36,49 @@ async function writeCached(texts: string[], translations: string[], source: Lang
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ texts, translations, source, target })
   }).catch(() => null);
+}
+
+function containsJapanese(text: string) {
+  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text);
+}
+
+function containsVietnameseMarks(text: string) {
+  return /[ăâđêôơưáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i.test(text);
+}
+
+function looksUsableTranslation(sourceText: string, translatedText: string, target: LanguageCode) {
+  const source = sourceText.trim();
+  const translated = translatedText.trim();
+  if (!translated) return false;
+  if (translated === source && source.length > 20) return false;
+  if ((target === "en" || target === "vi") && containsJapanese(translated)) return false;
+  if (target === "vi" && translated.length > 40 && !containsVietnameseMarks(translated)) return false;
+  if (source.length > 120 && translated.length < source.length * 0.35) return false;
+  return true;
+}
+
+function splitTextForTranslation(text: string) {
+  const parts = text.match(/[^\n。！？.!?]+[\n。！？.!?]*/g) || [text];
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const part of parts) {
+    if ((current + part).length <= maxChunkLength) {
+      current += part;
+      continue;
+    }
+
+    if (current.trim()) chunks.push(current);
+    current = part;
+
+    while (current.length > maxChunkLength) {
+      chunks.push(current.slice(0, maxChunkLength));
+      current = current.slice(maxChunkLength);
+    }
+  }
+
+  if (current.trim()) chunks.push(current);
+  return chunks.length ? chunks : [text];
 }
 
 function translateWithWorker(text: string, source: LanguageCode, target: LanguageCode, onProgress?: (progress: TranslationProgress) => void) {
@@ -66,11 +110,25 @@ async function translatePlainText(text: string, source: LanguageCode, target: La
   if (!text.trim() || source === target) return text;
 
   const cached = await readCached([text], source, target);
-  if (!cached.missing.length) return cached.translations[0] || text;
+  const cachedTranslation = cached.translations[0] || "";
+  if (!cached.missing.length && looksUsableTranslation(text, cachedTranslation, target)) return cachedTranslation;
+
+  const chunks = splitTextForTranslation(text);
+  if (chunks.length > 1) {
+    const translatedChunks: string[] = [];
+    for (const chunk of chunks) {
+      translatedChunks.push(await translatePlainText(chunk, source, target, onProgress));
+    }
+    const translatedText = translatedChunks.join("");
+    if (looksUsableTranslation(text, translatedText, target)) {
+      await writeCached([text], [translatedText], source, target);
+      return translatedText;
+    }
+  }
 
   const translated = await translateWithWorker(text, source, target, onProgress);
   await writeCached([text], [translated], source, target);
-  return translated;
+  return looksUsableTranslation(text, translated, target) ? translated : text;
 }
 
 export async function prepareEventTranslations(
@@ -83,7 +141,7 @@ export async function prepareEventTranslations(
 
   for (const target of targetLanguages) {
     if (target === input.sourceLanguage) continue;
-    onProgress?.({ stage: "translating", message: "翻訳中..." });
+    onProgress?.({ stage: "translating", message: "Translating..." });
 
     title_i18n[target] = await translatePlainText(input.title, input.sourceLanguage, target, onProgress);
     location_i18n[target] = await translatePlainText(input.location, input.sourceLanguage, target, onProgress);

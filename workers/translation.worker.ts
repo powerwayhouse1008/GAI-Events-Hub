@@ -37,14 +37,14 @@ function postProgress(message: string, progress?: number) {
 async function getPipeline(model: string) {
   let loading = pipelines.get(model);
   if (!loading) {
-    postProgress("鄙ｻ險ｳ繝｢繝・Ν繧呈ｺ門ｙ縺励※縺・∪縺・..");
+    postProgress("Preparing translation model...");
     const createPipeline = pipeline as unknown as PipelineFactory;
     loading = createPipeline("translation", model, {
       dtype: "q8",
       device: "wasm",
       progress_callback: (info: { status?: string; progress?: number }) => {
         if (info.status === "progress_total" && typeof info.progress === "number") {
-          postProgress("鄙ｻ險ｳ繝｢繝・Ν繧呈ｺ門ｙ縺励※縺・∪縺・..", info.progress);
+          postProgress("Preparing translation model...", info.progress);
         }
       }
     });
@@ -73,7 +73,7 @@ async function translateFromEnglish(text: string, target: LanguageCode) {
 
 async function translate(text: string, source: LanguageCode, target: LanguageCode) {
   if (source === target) return text;
-  postProgress("鄙ｻ險ｳ荳ｭ...");
+  postProgress("Translating...");
   const english = await translateToEnglish(text, source);
   return translateFromEnglish(english, target);
 }
