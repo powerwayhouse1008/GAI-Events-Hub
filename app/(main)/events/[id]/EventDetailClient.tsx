@@ -172,15 +172,15 @@ export function EventDetailClient({
                   <div className={`grid h-14 w-14 place-items-center rounded-[8px] bg-gradient-to-br ${theme.gradient} shadow-lg`}>
                     <Sparkles size={24} />
                   </div>
-                  <h2 className="mt-5 text-2xl font-black">イベント情報</h2>
+                  <h2 className="mt-5 text-2xl font-black">{t("Event Information")}</h2>
 
                   <div className="mt-6 grid gap-3">
-                    <InfoRow icon={<CalendarDays size={18} />} label="日付" value={formatTokyoDate(localizedEvent.starts_at)} />
-                    <InfoRow icon={<Clock size={18} />} label="時間" value={formatTokyoTimeRange(localizedEvent)} />
-                    <InfoRow icon={<MapPin size={18} />} label="場所" value={localizedEvent.location || localizedEvent.region || "オンライン / 未定"} />
-                    <InfoRow icon={<Ticket size={18} />} label="価格" value={localizedEvent.ticket_price ? `¥${localizedEvent.ticket_price}` : "無料"} />
-                    <InfoRow icon={<Users size={18} />} label="参加承認" value={isManualReview ? "手動承認" : "自動承認"} />
-                    <InfoRow icon={<CheckCircle2 size={18} />} label="承認済み" value={`${approvedCount} 名`} />
+                    <InfoRow icon={<CalendarDays size={18} />} label={t("Date")} value={formatTokyoDate(localizedEvent.starts_at)} />
+                    <InfoRow icon={<Clock size={18} />} label={t("Time")} value={formatTokyoTimeRange(localizedEvent)} />
+                    <InfoRow icon={<MapPin size={18} />} label={t("Location")} value={localizedEvent.location || localizedEvent.region || t("Online / TBA")} />
+                    <InfoRow icon={<Ticket size={18} />} label={t("Price")} value={localizedEvent.ticket_price ? `JPY ${localizedEvent.ticket_price}` : t("Free")} />
+                    <InfoRow icon={<Users size={18} />} label={t("Participant approval")} value={isManualReview ? t("Manually approve participants") : t("Automatically approve participants")} />
+                    <InfoRow icon={<CheckCircle2 size={18} />} label={t("Approved")} value={`${approvedCount} ${t("people")}`} />
                   </div>
 
                   {localizedEvent.online_url && (
@@ -196,16 +196,16 @@ export function EventDetailClient({
               {isOrganizer && (
                 <div className="mt-10 grid gap-8">
                   <section className={`rounded-[8px] border ${theme.border} bg-white/[0.06] p-6 shadow-xl ${theme.glow} backdrop-blur`}>
-                    <h2 className="text-2xl font-black">イベント進行状況</h2>
+                    <h2 className="text-2xl font-black">{t("Event Progress")}</h2>
                     <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <StatCard label="開始日時" value={formatTokyoDateTime(localizedEvent.starts_at)} />
-                      <StatCard label="申込数" value={String(participants.length)} strong />
-                      <StatCard label="承認済み" value={String(approvedCount)} strong />
-                      <StatCard label="定員" value={localizedEvent.capacity ? String(localizedEvent.capacity) : "無制限"} strong />
+                      <StatCard label={t("Start")} value={formatTokyoDateTime(localizedEvent.starts_at)} />
+                      <StatCard label={t("Register")} value={String(participants.length)} strong />
+                      <StatCard label={t("Approved")} value={String(approvedCount)} strong />
+                      <StatCard label={t("Capacity")} value={localizedEvent.capacity ? String(localizedEvent.capacity) : t("Unlimited")} strong />
                     </div>
                   </section>
 
-                  <ManagementSection title={t("通知・更新")}>
+                  <ManagementSection title={t("Notifications & Updates")}>
                     <AnnouncementForm
                       eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "announcement"}
@@ -215,7 +215,7 @@ export function EventDetailClient({
                     <AnnouncementsList announcements={announcements} onDelete={refreshAnnouncements} isOrganizerView />
                   </ManagementSection>
 
-                  <ManagementSection title={t("資料・画像")}>
+                  <ManagementSection title={t("Materials & Images")}>
                     <DocumentUpload
                       eventId={localizedEvent.id}
                       isOpen={activeManagerModal === "document"}
@@ -224,14 +224,13 @@ export function EventDetailClient({
                     />
                     <DocumentsList documents={documents} onDelete={refreshDocuments} isOrganizerView />
                   </ManagementSection>
-
-                  <ManagementSection title={t("参加申込の管理")}>
+                  <ManagementSection title={t("Manage Registrations")}>
                     <RegistrationReviewPanel participants={participants} approvalMode={event.approval_mode} onUpdated={refreshParticipants} />
                   </ManagementSection>
 
-                  <ManagementSection title={t("参加者リスト")}>
+                  <ManagementSection title={t("Participant List")}>
                     <button onClick={refreshParticipants} className="btn border border-white/15 bg-white/10 text-white hover:bg-white/15" type="button">
-                      参加者を更新
+                      {t("Refresh Participants")}
                     </button>
                     <ParticipantsList participants={participants} totalCapacity={localizedEvent.capacity} />
                   </ManagementSection>
@@ -301,15 +300,17 @@ function HeroBlock({ event, theme }: { event: Event & { organizerName?: string }
 }
 
 function ParticipantTimeline({ announcements, theme }: { announcements: Announcement[]; theme: ReturnType<typeof getEventTheme> }) {
+  const { t } = useLanguage();
+
   return (
     <section className="mt-0">
       <div className="mb-5 flex items-center gap-3">
         <Bell className={theme.badge} size={22} />
-        <h2 className="text-3xl font-black">通知・更新</h2>
+        <h2 className="text-3xl font-black">{t("Notifications & Updates")}</h2>
       </div>
 
       {announcements.length === 0 ? (
-        <div className="rounded-[8px] border border-white/15 bg-white/[0.06] p-6 text-slate-300">まだ通知はありません。</div>
+        <div className="rounded-[8px] border border-white/15 bg-white/[0.06] p-6 text-slate-300">{t("No notifications yet.")}</div>
       ) : (
         <div className="relative ml-4 space-y-5 border-l border-white/25 pl-7">
           {announcements.map((announcement, index) => (
@@ -331,13 +332,15 @@ function ParticipantTimeline({ announcements, theme }: { announcements: Announce
 }
 
 function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]; theme: ReturnType<typeof getEventTheme> }) {
+  const { t } = useLanguage();
+
   if (documents.length === 0) return null;
 
   return (
     <section className="mt-10">
       <div className="mb-5 flex items-center gap-3">
         <FileText className={theme.badge} size={22} />
-        <h2 className="text-3xl font-black">資料・画像</h2>
+        <h2 className="text-3xl font-black">{t("Materials & Images")}</h2>
       </div>
 
       <div className="grid gap-6">
@@ -366,11 +369,10 @@ function ParticipantDocuments({ documents, theme }: { documents: EventDocument[]
 
               <a
                 href={doc.file_url}
-                target="_blank"
                 rel="noopener noreferrer"
                 className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/25 px-3 py-2 text-xs font-black text-white shadow-xl backdrop-blur transition hover:bg-white/20"
               >
-                <Download className="h-3.5 w-3.5" />
+                {t("Open")}
                 開く
               </a>
             </article>
@@ -450,7 +452,7 @@ function EventEngagementPanel({
     setBusy(`vote-${value}`);
     setNotice(null);
     const result = await setEventVote(eventId, value);
-    if (!result.ok) setNotice(result.message ? t(result.message) : t("更新できませんでした。"));
+    if (!result.ok) setNotice(result.message ? t(result.message) : t("Could not update."));
     await onUpdated();
     setBusy(null);
   }
@@ -462,29 +464,18 @@ function EventEngagementPanel({
     const originalComment = comment;
     const result = await createEventComment(eventId, originalComment, sourceLanguage);
     if (result.ok) setComment("");
-    else setNotice(result.message ? t(result.message) : t("コメントできませんでした。"));
+    else setNotice(result.message ? t(result.message) : t("Could not post comment."));
     await onUpdated();
     if (result.ok && result.id) {
       try {
         const { prepareCommentTranslations } = await import("@/lib/translation/client");
-        const translations = await prepareCommentTranslations({
-          content: originalComment.trim(),
-          sourceLanguage
-        });
-
-        const translationResult = await saveEventCommentTranslations({
-          commentId: result.id,
-          eventId,
-          sourceLanguage,
-          ...translations
-        });
-
+        const translations = await prepareCommentTranslations({ content: originalComment.trim(), sourceLanguage });
+        const translationResult = await saveEventCommentTranslations({ commentId: result.id, eventId, sourceLanguage, ...translations });
         if (translationResult.ok) await onUpdated();
       } catch (error) {
         console.error("Comment translation failed", error);
       }
     }
-
     setBusy(null);
   }
 
@@ -492,7 +483,7 @@ function EventEngagementPanel({
     setBusy(action);
     setNotice(null);
     const result = await task();
-    if (!result.ok) setNotice(result.message ? t(result.message) : t("更新できませんでした。"));
+    if (!result.ok) setNotice(result.message ? t(result.message) : t("Could not update."));
     await onUpdated();
     setBusy(null);
   }
@@ -500,12 +491,10 @@ function EventEngagementPanel({
   return (
     <section className="mt-10 rounded-[8px] border border-white/15 bg-white/[0.06] p-5 shadow-xl backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-3xl font-black">{t("リアクション・コメント")}</h2>
+        <h2 className="text-3xl font-black">{t("Reactions & Comments")}</h2>
         <div className="flex gap-2">
           <button
-            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
-              engagement.myVote === 1 ? "bg-emerald-400/25 text-emerald-100" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${engagement.myVote === 1 ? "bg-emerald-400/25 text-emerald-100" : "bg-white/10 text-white hover:bg-white/20"}`}
             disabled={!profile || !canEngage || busy === "vote-1"}
             onClick={() => vote(1)}
             type="button"
@@ -514,9 +503,7 @@ function EventEngagementPanel({
             {engagement.likes}
           </button>
           <button
-            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${
-              engagement.myVote === -1 ? "bg-rose-400/25 text-rose-100" : "bg-white/10 text-white hover:bg-white/20"
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border ${theme.border} px-4 py-2 text-sm font-black transition ${engagement.myVote === -1 ? "bg-rose-400/25 text-rose-100" : "bg-white/10 text-white hover:bg-white/20"}`}
             disabled={!profile || !canEngage || busy === "vote--1"}
             onClick={() => vote(-1)}
             type="button"
@@ -537,7 +524,7 @@ function EventEngagementPanel({
               setComment(event.target.value);
               autoGrowTextarea(event.currentTarget);
             }}
-            placeholder={t("コメントを書く")}
+            placeholder={t("Write a comment")}
             value={comment}
           />
           <button
@@ -546,22 +533,13 @@ function EventEngagementPanel({
             onClick={submitComment}
             type="button"
           >
-            {busy === "comment" ? t("送信中...") : t("コメント投稿")}
+            {busy === "comment" ? t("Sending...") : t("Post Comment")}
           </button>
         </div>
       )}
 
-      {profile && engagement.myCommentRestricted && (
-        <div className="mt-5 rounded-[8px] border border-red-300/30 bg-red-300/15 p-3 text-sm font-bold text-red-100">
-          このイベントではコメント権限が制限されています。
-        </div>
-      )}
-
-      {profile && !isOrganizer && !canEngage && (
-        <div className="mt-5 rounded-[8px] border border-white/15 bg-white/10 p-3 text-sm font-bold text-slate-200">
-          参加が承認された後にコメントと投票ができます。
-        </div>
-      )}
+      {profile && engagement.myCommentRestricted && <div className="mt-5 rounded-[8px] border border-red-300/30 bg-red-300/15 p-3 text-sm font-bold text-red-100">{t("Commenting is restricted for this event.")}</div>}
+      {profile && !isOrganizer && !canEngage && <div className="mt-5 rounded-[8px] border border-white/15 bg-white/10 p-3 text-sm font-bold text-slate-200">{t("You can comment and vote after your registration is approved.")}</div>}
 
       <div className="mt-6 grid gap-3">
         {engagement.comments.map((item) => {
@@ -571,60 +549,18 @@ function EventEngagementPanel({
           return (
             <article key={item.id} className="rounded-[8px] border border-white/10 bg-black/20 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-black text-white">{name}</p>
-                  <p className="text-xs font-bold text-slate-400">
-                    {new Date(item.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-                  </p>
-                </div>
-                {isOrganizer && (
-                  <div className="flex flex-wrap gap-2">
-                    {!item.hidden && (
-                      <button
-                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-black text-white hover:bg-white/20"
-                        disabled={busy === `hide-${item.id}`}
-                        onClick={() => runModeration(`hide-${item.id}`, () => hideEventComment(item.id, eventId))}
-                        type="button"
-                      >
-                        非表示
-                      </button>
-                    )}
-                    <button
-                      className="rounded-full bg-red-500/20 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-500/30"
-                      disabled={busy === `delete-${item.id}`}
-                      onClick={() => runModeration(`delete-${item.id}`, () => deleteEventComment(item.id, eventId))}
-                      type="button"
-                    >
-                      <Trash2 className="inline h-3.5 w-3.5" /> 削除
-                    </button>
-                    <button
-                      className="rounded-full bg-amber-400/20 px-3 py-2 text-xs font-black text-amber-100 hover:bg-amber-400/30"
-                      disabled={busy === `restrict-${item.user_id}`}
-                      onClick={() =>
-                        runModeration(`restrict-${item.user_id}`, () =>
-                          restricted
-                            ? unrestrictEventCommenter(eventId, item.user_id)
-                            : restrictEventCommenter(eventId, item.user_id)
-                        )
-                      }
-                      type="button"
-                    >
-                      {restricted ? "制限解除" : "コメント制限"}
-                    </button>
-                  </div>
-                )}
+                <div><p className="font-black text-white">{name}</p><p className="text-xs font-bold text-slate-400">{new Date(item.created_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}</p></div>
+                {isOrganizer && <div className="flex flex-wrap gap-2">
+                  {!item.hidden && <button className="rounded-full bg-white/10 px-3 py-2 text-xs font-black text-white hover:bg-white/20" disabled={busy === `hide-${item.id}`} onClick={() => runModeration(`hide-${item.id}`, () => hideEventComment(item.id, eventId))} type="button">{t("Hide")}</button>}
+                  <button className="rounded-full bg-red-500/20 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-500/30" disabled={busy === `delete-${item.id}`} onClick={() => runModeration(`delete-${item.id}`, () => deleteEventComment(item.id, eventId))} type="button"><Trash2 className="inline h-3.5 w-3.5" /> {t("Delete")}</button>
+                  <button className="rounded-full bg-amber-400/20 px-3 py-2 text-xs font-black text-amber-100 hover:bg-amber-400/30" disabled={busy === `restrict-${item.user_id}`} onClick={() => runModeration(`restrict-${item.user_id}`, () => restricted ? unrestrictEventCommenter(eventId, item.user_id) : restrictEventCommenter(eventId, item.user_id))} type="button">{restricted ? t("Remove restriction") : t("Restrict comments")}</button>
+                </div>}
               </div>
-              <p className={`mt-3 whitespace-pre-wrap leading-7 ${item.hidden ? "text-slate-500 line-through" : "text-slate-200"}`}>
-                {item.hidden ? t("このコメントは非表示です。") : localizedContent}
-              </p>
+              <p className={`mt-3 whitespace-pre-wrap leading-7 ${item.hidden ? "text-slate-500 line-through" : "text-slate-200"}`}>{item.hidden ? t("This comment is hidden.") : localizedContent}</p>
             </article>
           );
         })}
-        {!engagement.comments.length && (
-          <div className="rounded-[8px] border border-white/10 bg-black/20 p-4 text-sm font-bold text-slate-400">
-            まだコメントはありません。
-          </div>
-        )}
+        {!engagement.comments.length && <div className="rounded-[8px] border border-white/10 bg-black/20 p-4 text-sm font-bold text-slate-400">{t("No comments yet.")}</div>}
       </div>
     </section>
   );

@@ -305,6 +305,9 @@ const staticUiPhraseSets: TranslationEntry[] = [
 ];
 
 phraseSets.push(...staticUiPhraseSets);
+phraseSets.push(
+  { ja: "参加承認", en: "Participant approval", zh: "参加审批", vi: "Duyệt tham gia", sources: ["Participant approval"] }
+);
 
 const phraseMap = new Map<string, TranslationSet>();
 const orderedPhraseSources = phraseSets
@@ -349,6 +352,25 @@ export function translatePhrase(value: string, language: LanguageCode) {
   return value.replace(trimmed, translated);
 }
 
+function containsCjk(text: string) {
+  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text);
+}
+
+function containsJapaneseKana(text: string) {
+  return /[\u3040-\u30ff]/.test(text);
+}
+
+function looksBrokenLocalizedText(text: string, locale: LanguageCode | string) {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  if (/^(?:A[\s-]*){8,}$/i.test(trimmed)) return true;
+  if (/^[A-Za-z]$/.test(trimmed) && locale !== "en") return true;
+  if (/[�ﾂﾃﾄ盻蘯譁繧縺蜿謇逕譌髢]/.test(trimmed)) return true;
+  if ((locale === "en" || locale === "vi") && containsCjk(trimmed)) return true;
+  if (locale === "zh" && containsJapaneseKana(trimmed)) return true;
+  return false;
+}
+
 export function pickLocalized(value: unknown, locale: LanguageCode | string, fallback: LanguageCode | string = "en") {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -363,5 +385,5 @@ export function pickLocalized(value: unknown, locale: LanguageCode | string, fal
     ...Object.values(localized)
   ];
 
-  return String(candidates.find((item) => typeof item === "string" && item.trim()) || "");
+  return String(candidates.find((item) => typeof item === "string" && item.trim() && !looksBrokenLocalizedText(item, locale)) || "");
 }
