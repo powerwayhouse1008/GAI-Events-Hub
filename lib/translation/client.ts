@@ -83,7 +83,7 @@ export async function prepareEventTranslations(
 
   for (const target of targetLanguages) {
     if (target === input.sourceLanguage) continue;
-    onProgress?.({ stage: "translating", message: "鄙ｻ險ｳ荳ｭ..." });
+    onProgress?.({ stage: "translating", message: "翻訳中..." });
 
     title_i18n[target] = await translatePlainText(input.title, input.sourceLanguage, target, onProgress);
     location_i18n[target] = await translatePlainText(input.location, input.sourceLanguage, target, onProgress);

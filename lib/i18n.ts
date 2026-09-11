@@ -225,6 +225,7 @@ const staticUiPhraseSets: TranslationEntry[] = [
   { ja: "Event was saved, but no event ID was returned.", en: "Event was saved, but no event ID was returned.", zh: "活动已保存，但未返回活动 ID。", vi: "Sự kiện đã lưu nhưng không nhận được ID sự kiện." },
   { ja: "イベントは保存されましたが、自動翻訳に失敗しました。後で再翻訳できます。", en: "The event was saved, but automatic translation failed. You can translate it again later.", zh: "活动已保存，但自动翻译失败。你可以稍后重新翻译。", vi: "Sự kiện đã được lưu nhưng dịch tự động thất bại. Bạn có thể dịch lại sau." },
   { ja: "翻訳モデルを準備しています...", en: "Preparing translation model...", zh: "正在准备翻译模型...", vi: "Đang chuẩn bị mô hình dịch..." },
+  { ja: "翻訳中...", en: "Translating...", zh: "正在翻译...", vi: "Đang dịch..." },
   { ja: "翻訳を保存しています...", en: "Saving translations...", zh: "正在保存翻译...", vi: "Đang lưu bản dịch..." },
   { ja: "通知を送信", en: "Send Notification", zh: "发送通知", vi: "Gửi thông báo" },
   { ja: "新しい通知", en: "New Notification", zh: "新通知", vi: "Thông báo mới" },
