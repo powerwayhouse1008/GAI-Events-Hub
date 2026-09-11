@@ -285,7 +285,7 @@ export default async function EventsPage({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-4xl font-black">All Events</h2>
-            <p className="mt-2 text-slate-400">すべてのAIイベントを確認できます。</p>
+            <p className="mt-2 text-slate-400"><LocalizedText text="すべてのAIイベントを確認できます。" /></p>
           </div>
           <Link href="/events/all" className="btn rounded-full border border-white/15 bg-white/5 text-white hover:bg-white/10">
             View All Events

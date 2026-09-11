@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { ApprovalStatus, UserRole } from "@/lib/types";
 import { createDefaultAdmin, deleteAccount, grantAdmin, revokeAdmin } from "./accountActions";
 import type { AccountActionResult } from "./accountActions";
@@ -30,6 +31,7 @@ function formDataFor(id: string) {
 
 export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAccountsClientProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [accounts, setAccounts] = useState(initialAccounts);
   const [pending, setPending] = useState<Record<string, PendingAction | undefined>>({});
   const [notice, setNotice] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
       const result = await call(formDataFor(id));
       if (!result?.ok) {
         setAccounts(previousAccounts);
-        setNotice(result?.message || "操作に失敗しました。");
+        setNotice(result?.message || t("操作に失敗しました。"));
       } else if (result.account) {
         applyAccountPatch(result.account.id, {
           role: result.account.role,
@@ -90,7 +92,7 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
     startTransition(async () => {
       const result = await createDefaultAdmin();
       if (!result?.ok) {
-        setNotice(result?.message || "管理者アカウントを準備できませんでした。");
+        setNotice(result?.message || t("管理者アカウントを準備できませんでした。"));
       }
       setRowPending("__default__", undefined);
       router.refresh();
@@ -101,9 +103,9 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-5xl font-black tracking-tight">アカウント権限</h1>
+          <h1 className="text-5xl font-black tracking-tight">{t("アカウント権限")}</h1>
           <p className="mt-3 text-slate-500">
-            登録済みアカウントの管理者権限を変更し、不要なアカウントを削除できます。
+            {t("登録済みアカウントの管理者権限を変更し、不要なアカウントを削除できます。")}
           </p>
         </div>
         <button
@@ -112,7 +114,7 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
           onClick={createMaiAdmin}
           type="button"
         >
-          {pending.__default__ === "default" ? "処理中..." : "mai@powerway.jp を管理者に設定"}
+          {pending.__default__ === "default" ? t("処理中...") : t("mai@powerway.jp を管理者に設定")}
         </button>
       </div>
 
@@ -126,12 +128,12 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
         <table className="w-full text-left">
           <thead>
             <tr className="border-b">
-              <th className="p-3">名前</th>
-              <th className="p-3">メール</th>
-              <th className="p-3">会社・コミュニティ</th>
-              <th className="p-3">権限</th>
-              <th className="p-3">主催者状態</th>
-              <th className="p-3">操作</th>
+              <th className="p-3">{t("名前")}</th>
+              <th className="p-3">{t("メール")}</th>
+              <th className="p-3">{t("会社・コミュニティ")}</th>
+              <th className="p-3">{t("権限")}</th>
+              <th className="p-3">{t("主催者状態")}</th>
+              <th className="p-3">{t("操作")}</th>
             </tr>
           </thead>
           <tbody>
@@ -147,10 +149,10 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
                   <td className="p-3">{account.company_name || "-"}</td>
                   <td className="p-3">
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                      {account.role}
+                      {t(account.role)}
                     </span>
                   </td>
-                  <td className="p-3">{account.organizer_status}</td>
+                  <td className="p-3">{t(account.organizer_status)}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -164,7 +166,7 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
                         }
                         type="button"
                       >
-                        {rowPending === "grant" ? "処理中..." : "管理者にする"}
+                        {rowPending === "grant" ? t("処理中...") : t("管理者にする")}
                       </button>
                       <button
                         disabled={account.role !== "admin" || isCurrentAdmin || isBusy}
@@ -177,18 +179,18 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
                         }
                         type="button"
                       >
-                        {rowPending === "revoke" ? "処理中..." : "管理者解除"}
+                        {rowPending === "revoke" ? t("処理中...") : t("管理者解除")}
                       </button>
                       <button
                         disabled={isCurrentAdmin || isBusy}
                         className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-300"
                         onClick={() => {
-                          if (!window.confirm("このアカウントを削除しますか？")) return;
+                          if (!window.confirm(t("このアカウントを削除しますか？"))) return;
                           runAccountAction(account.id, "delete", deleteAccount);
                         }}
                         type="button"
                       >
-                        {rowPending === "delete" ? "処理中..." : "アカウント削除"}
+                        {rowPending === "delete" ? t("処理中...") : t("アカウント削除")}
                       </button>
                     </div>
                   </td>
@@ -198,7 +200,7 @@ export function AdminAccountsClient({ initialAccounts, currentAdminId }: AdminAc
             {!sortedAccounts.length && (
               <tr>
                 <td colSpan={6} className="p-3 text-slate-500">
-                  アカウントがありません。
+                  {t("アカウントがありません。")}
                 </td>
               </tr>
             )}

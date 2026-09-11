@@ -3,9 +3,11 @@
 import { Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { saveFooterLinks } from "@/app/(main)/admin/footerLinkActions";
+import { useLanguage } from "@/components/LanguageProvider";
 import { footerLinkItems, normalizeFooterUrl, type FooterLinkKey, type FooterLinkMap } from "@/lib/footer-links";
 
 export function AdminLinkPanel({ initialLinks }: { initialLinks: FooterLinkMap }) {
+  const { t } = useLanguage();
   const [links, setLinks] = useState(initialLinks);
   const [activeKey, setActiveKey] = useState<FooterLinkKey>(footerLinkItems[0].key);
   const [savedMessage, setSavedMessage] = useState("");
@@ -20,22 +22,22 @@ export function AdminLinkPanel({ initialLinks }: { initialLinks: FooterLinkMap }
 
     if (result.ok) {
       setLinks(normalizedLinks);
-      setSavedMessage("保存しました");
+      setSavedMessage(t("保存しました"));
       return;
     }
 
-    setSavedMessage(`保存できませんでした: ${result.message}`);
+    setSavedMessage(`${t("保存できませんでした。")} ${result.message}`);
   }
 
   return (
     <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black">リンク管理</h2>
-          <p className="mt-1 text-sm font-bold text-slate-500">Footer の各項目に Web リンクを割り当てて保存できます。</p>
+          <h2 className="text-2xl font-black">{t("リンク管理")}</h2>
+          <p className="mt-1 text-sm font-bold text-slate-500">{t("Footer の各項目に Web リンクを割り当てて保存できます。")}</p>
         </div>
         <button className="btn btn-primary" disabled={saving} onClick={saveLinks} type="button">
-          <Save size={17} /> {saving ? "保存中..." : "保存"}
+          <Save size={17} /> {saving ? t("保存中...") : t("保存")}
         </button>
       </div>
 
@@ -45,7 +47,7 @@ export function AdminLinkPanel({ initialLinks }: { initialLinks: FooterLinkMap }
         <div className="grid gap-3">
           {footerLinkItems.map((item) => (
             <label key={item.key} className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
               <input
                 className="input bg-white"
                 value={links[item.key] || ""}
@@ -60,7 +62,7 @@ export function AdminLinkPanel({ initialLinks }: { initialLinks: FooterLinkMap }
             </label>
           ))}
         </div>
-        <iframe title="リンクプレビュー" src={safeActiveUrl} className="h-[640px] w-full rounded-xl border border-slate-200 bg-white" />
+        <iframe title={t("リンクプレビュー")} src={safeActiveUrl} className="h-[640px] w-full rounded-xl border border-slate-200 bg-white" />
       </div>
     </section>
   );
