@@ -250,6 +250,9 @@ export function EventForm({ event }: EventFormProps) {
 
       if (translationResult.error) {
         alert(t(translationResult.error));
+      } else {
+        setTranslationStatus(t("Translation completed."));
+        alert(t("Translation completed."));
       }
     } catch (error) {
       console.error("Event translation failed", error);

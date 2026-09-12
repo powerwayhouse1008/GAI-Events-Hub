@@ -227,6 +227,7 @@ const staticUiPhraseSets: TranslationEntry[] = [
   { ja: "翻訳モデルを準備しています...", en: "Preparing translation model...", zh: "正在准备翻译模型...", vi: "Đang chuẩn bị mô hình dịch..." },
   { ja: "翻訳中...", en: "Translating...", zh: "正在翻译...", vi: "Đang dịch..." },
   { ja: "翻訳を保存しています...", en: "Saving translations...", zh: "正在保存翻译...", vi: "Đang lưu bản dịch..." },
+  { ja: "翻訳が完了しました。", en: "Translation completed.", zh: "翻译完成。", vi: "Đã dịch xong." },
   { ja: "通知を送信", en: "Send Notification", zh: "发送通知", vi: "Gửi thông báo" },
   { ja: "新しい通知", en: "New Notification", zh: "新通知", vi: "Thông báo mới" },
   { ja: "タイトル", en: "Title", zh: "标题", vi: "Tiêu đề" },
